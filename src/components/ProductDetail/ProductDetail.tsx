@@ -15,7 +15,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   similarProducts,
 }) => {
   // Thông tin sản phẩm 1 từ LandingPage
-  const productData = product;
+  const productData = {
+    name: "Giày Sandal Nam 7081 - Sandal Nam Quai Ngang Chéo Phối Lót Dán Thời Trang, Sandal Nam Công Sở Năng Động, Trẻ Trung.",
+    price: 1000000,
+    image:
+      "https://firebasestorage.googleapis.com/v0/b/refreshing-well-408704.appspot.com/o/mwc%20(2).jpg?alt=media&token=79e7a687-b564-45c2-830e-58a4255de418",
+    description:
+      "Giày Sandal Nam 7081 được thiết kế với quai ngang chéo phối lót dán, mang lại sự thoải mái và thời trang. Phù hợp cho công sở và các hoạt động năng động, trẻ trung.",
+  };
 
   return (
     <div className="max-w-4xl mx-auto mt-10 text-center">
