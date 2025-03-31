@@ -1,16 +1,31 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const ForgotPasswordForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [isHuman, setIsHuman] = useState(false);
 
-  const handleForgotPassword = () => {
+  const handleForgotPassword = async () => {
     if (!email || !isHuman) return;
 
-    // Giả sử gửi OTP thành công
-    navigate("/otp-verification", { state: { email } });
+    try {
+      const response = await axios.post(
+        "http://localhost:5005/api/v1/auth/forgot-password",
+        {
+          email,
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("OTP đã được gửi đến email của bạn!");
+        navigate("/otp-verification", { state: { email } });
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Không thể gửi OTP!");
+    }
   };
 
   return (

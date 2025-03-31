@@ -1,47 +1,107 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleRegister = async () => {
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Mật khẩu và xác nhận mật khẩu không khớp!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        "http://localhost:5005/api/v1/auth/register",
+        {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }
+      );
+
+      if (response.data.success) {
+        toast.success(
+          "Đăng ký thành công! Vui lòng kiểm tra email để nhận mã OTP."
+        );
+        navigate("/otp-verification"); // Điều hướng đến trang xác thực OTP
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Đăng ký thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-lg mx-auto">
       <div className="mb-4">
         <input
           type="text"
+          name="name"
           placeholder="Nhập tên người dùng"
           className="w-full border border-gray-300 p-3 text-lg rounded outline-none"
+          value={formData.name}
+          onChange={handleChange}
         />
       </div>
 
       <div className="mb-4">
         <input
           type="email"
+          name="email"
           placeholder="Nhập email"
           className="w-full border border-gray-300 p-3 text-lg rounded outline-none"
+          value={formData.email}
+          onChange={handleChange}
         />
       </div>
 
       <div className="mb-4">
         <input
           type="password"
+          name="password"
           placeholder="Nhập mật khẩu"
           className="w-full border border-gray-300 p-3 text-lg rounded outline-none"
+          value={formData.password}
+          onChange={handleChange}
         />
       </div>
 
       <div className="mb-6">
         <input
           type="password"
+          name="confirmPassword"
           placeholder="Nhập lại mật khẩu"
           className="w-full border border-gray-300 p-3 text-lg rounded outline-none"
+          value={formData.confirmPassword}
+          onChange={handleChange}
         />
       </div>
 
-      <button 
+      <button
         className="w-full bg-green-500 text-white py-3 text-xl font-bold rounded"
-        onClick={() => navigate("/otp-verification")}
+        onClick={handleRegister}
+        disabled={loading}
       >
-        Đăng ký
+        {loading ? "Đang xử lý..." : "Đăng ký"}
       </button>
+      <ToastContainer />
     </div>
   );
 };

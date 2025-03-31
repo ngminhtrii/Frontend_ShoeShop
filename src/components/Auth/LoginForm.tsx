@@ -1,9 +1,58 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 // @ts-ignore
 import "@fontsource/lobster";
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [registerName, setRegisterName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5005/api/v1/auth/login",
+        {
+          email: loginEmail,
+          password: loginPassword,
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Đăng nhập thành công!");
+        navigate("/"); // Redirect to dashboard or home
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Đăng nhập thất bại!");
+    }
+  };
+
+  const handleRegister = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5005/api/v1/auth/register",
+        {
+          name: registerName,
+          email: registerEmail,
+          password: registerPassword,
+        }
+      );
+
+      if (response.data.success) {
+        toast.success(
+          "Đăng ký thành công! Vui lòng kiểm tra email để xác thực."
+        );
+        navigate("/otp-verification", { state: { email: registerEmail } });
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Đăng ký thất bại!");
+    }
+  };
 
   return (
     <div className="flex items-center justify-center h-screen">
@@ -21,6 +70,8 @@ const LoginForm: React.FC = () => {
             <input
               type="email"
               className="border border-black rounded-md p-2 w-full"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
             />
           </div>
 
@@ -32,11 +83,16 @@ const LoginForm: React.FC = () => {
             <input
               type="password"
               className="border border-black rounded-md p-2 w-full"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
             />
           </div>
 
           <div className="flex items-center justify-between w-3/4 mb-1">
-            <button className="bg-black text-white px-4 py-2 rounded-md w-[40%]">
+            <button
+              className="bg-black text-white px-4 py-2 rounded-md w-[40%]"
+              onClick={handleLogin}
+            >
               Đăng nhập
             </button>
             <button
@@ -91,6 +147,8 @@ const LoginForm: React.FC = () => {
             <input
               type="text"
               className="border border-black rounded-md p-2 w-full"
+              value={registerName}
+              onChange={(e) => setRegisterName(e.target.value)}
             />
           </div>
 
@@ -102,6 +160,8 @@ const LoginForm: React.FC = () => {
             <input
               type="email"
               className="border border-black rounded-md p-2 w-full"
+              value={registerEmail}
+              onChange={(e) => setRegisterEmail(e.target.value)}
             />
           </div>
 
@@ -113,11 +173,16 @@ const LoginForm: React.FC = () => {
             <input
               type="password"
               className="border border-black rounded-md p-2 w-full"
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
             />
           </div>
 
           <div className="flex items-center justify-between w-3/4 mb-1">
-            <button className="bg-black text-white px-4 py-2 rounded-md w-[40%]">
+            <button
+              className="bg-black text-white px-4 py-2 rounded-md w-[40%]"
+              onClick={handleRegister}
+            >
               Đăng ký
             </button>
           </div>
