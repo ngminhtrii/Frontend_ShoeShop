@@ -1,45 +1,44 @@
 import React, { useState } from "react";
 import { IoIosSearch } from "react-icons/io";
 
-// Define the data type for categories
-interface Category {
+interface Color {
   id: string;
   name: string;
-  slug: string;
-  description: string;
-  isActive: boolean;
+  code: string | null; // Mã màu hex
+  colors: string[]; // Mảng chứa 2 màu nếu là half
+  type: "solid" | "half"; // solid hoặc half
   deletedAt: string | null;
   deletedBy: string | null;
 }
 
-const ListCategoriesPage: React.FC = () => {
+const ColorPage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [categories, setCategories] = useState<Category[]>([
+  const [colors, setColors] = useState<Color[]>([
     {
-      id: "CM001",
-      name: "Giày Thể Thao",
-      slug: "giay-the-thao",
-      description: "Danh mục các sản phẩm giày thể thao",
-      isActive: true,
+      id: "C001",
+      name: "Đỏ",
+      code: "#FF0000",
+      colors: [],
+      type: "solid",
       deletedAt: null,
       deletedBy: null,
     },
     {
-      id: "CM002",
-      name: "Giày Cao Gót",
-      slug: "giay-cao-got",
-      description: "Danh mục các sản phẩm giày cao gót",
-      isActive: true,
+      id: "C002",
+      name: "Xanh Lá",
+      code: "#00FF00",
+      colors: [],
+      type: "solid",
       deletedAt: null,
       deletedBy: null,
     },
     {
-      id: "CM003",
-      name: "Giày Lười",
-      slug: "giay-luoi",
-      description: "Danh mục các sản phẩm giày lười",
-      isActive: false,
+      id: "C003",
+      name: "Half Đỏ-Xanh",
+      code: null,
+      colors: ["#FF0000", "#0000FF"],
+      type: "half",
       deletedAt: "2025-04-01T10:00:00Z",
       deletedBy: "Admin",
     },
@@ -50,11 +49,8 @@ const ListCategoriesPage: React.FC = () => {
     setSearchQuery("");
   };
 
-  const filteredCategories = categories.filter((category) => {
-    return (
-      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      category.slug.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const filteredColors = colors.filter((color) => {
+    return color.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,13 +61,13 @@ const ListCategoriesPage: React.FC = () => {
     setIsSearchVisible(true);
   };
 
-  const handleDeleteCategory = (id: string) => {
-    setCategories((prev) => prev.filter((category) => category.id !== id));
+  const handleDeleteColor = (id: string) => {
+    setColors((prev) => prev.filter((color) => color.id !== id));
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Danh sách danh mục</h2>
+      <h2 className="text-2xl font-semibold mb-4">Danh sách màu sắc</h2>
 
       {/* Search Bar */}
       <div className="mb-4 flex items-center">
@@ -94,17 +90,17 @@ const ListCategoriesPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Nhập tên hoặc slug danh mục"
+              placeholder="Nhập tên màu"
               className="px-4 py-2 w-full border rounded-md"
             />
           </div>
         )}
       </div>
-      {/* Add Category Button */}
+      {/* Add Color Button */}
       <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6">
-        + Thêm Danh Mục
+        + Thêm Màu
       </button>
-      {/* Categories Table */}
+      {/* Colors Table */}
       <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
         <thead className="bg-gray-100">
           <tr>
@@ -112,19 +108,16 @@ const ListCategoriesPage: React.FC = () => {
               ID
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Tên Danh Mục
+              Tên Màu
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Slug
+              Mã Màu
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Mô Tả
+              Loại
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
               Trạng Thái
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Đã Xóa
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
               Thao Tác
@@ -132,21 +125,35 @@ const ListCategoriesPage: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredCategories.map((category) => (
-            <tr key={category.id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{category.id}</td>
-              <td className="py-2 px-4 border-b text-sm">{category.name}</td>
-              <td className="py-2 px-4 border-b text-sm">{category.slug}</td>
+          {filteredColors.map((color) => (
+            <tr key={color.id} className="hover:bg-gray-50">
+              <td className="py-2 px-4 border-b text-sm">{color.id}</td>
+              <td className="py-2 px-4 border-b text-sm">{color.name}</td>
               <td className="py-2 px-4 border-b text-sm">
-                {category.description}
+                {color.type === "solid" ? (
+                  <div
+                    className="w-6 h-6 rounded-full"
+                    style={{ backgroundColor: color.code || "#FFFFFF" }}
+                  ></div>
+                ) : (
+                  <div className="flex gap-1">
+                    {color.colors.map((c, index) => (
+                      <div
+                        key={index}
+                        className="w-6 h-6 rounded-full"
+                        style={{ backgroundColor: c }}
+                      ></div>
+                    ))}
+                  </div>
+                )}
               </td>
               <td className="py-2 px-4 border-b text-sm">
-                {category.isActive ? "Hoạt động" : "Không hoạt động"}
+                {color.type === "solid" ? "Solid" : "Half"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
-                {category.deletedAt
-                  ? `Đã xóa bởi ${category.deletedBy || "N/A"}`
-                  : "Chưa xóa"}
+                {color.deletedAt
+                  ? `Đã xóa bởi ${color.deletedBy || "N/A"}`
+                  : "Hoạt động"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
                 <button
@@ -156,7 +163,7 @@ const ListCategoriesPage: React.FC = () => {
                   Sửa
                 </button>
                 <button
-                  onClick={() => handleDeleteCategory(category.id)}
+                  onClick={() => handleDeleteColor(color.id)}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
                 >
                   Xoá
@@ -170,4 +177,4 @@ const ListCategoriesPage: React.FC = () => {
   );
 };
 
-export default ListCategoriesPage;
+export default ColorPage;

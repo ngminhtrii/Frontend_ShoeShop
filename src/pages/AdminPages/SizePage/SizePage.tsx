@@ -1,45 +1,36 @@
 import React, { useState } from "react";
 import { IoIosSearch } from "react-icons/io";
 
-// Define the data type for categories
-interface Category {
+interface Size {
   id: string;
-  name: string;
-  slug: string;
-  description: string;
-  isActive: boolean;
+  value: number; // Giá trị kích thước
+  description: string; // Mô tả kích thước
   deletedAt: string | null;
   deletedBy: string | null;
 }
 
-const ListCategoriesPage: React.FC = () => {
+const SizePage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [categories, setCategories] = useState<Category[]>([
+  const [sizes, setSizes] = useState<Size[]>([
     {
-      id: "CM001",
-      name: "Giày Thể Thao",
-      slug: "giay-the-thao",
-      description: "Danh mục các sản phẩm giày thể thao",
-      isActive: true,
+      id: "S001",
+      value: 38,
+      description: "Kích thước phổ biến cho giày nam",
       deletedAt: null,
       deletedBy: null,
     },
     {
-      id: "CM002",
-      name: "Giày Cao Gót",
-      slug: "giay-cao-got",
-      description: "Danh mục các sản phẩm giày cao gót",
-      isActive: true,
+      id: "S002",
+      value: 40,
+      description: "Kích thước phổ biến cho giày nữ",
       deletedAt: null,
       deletedBy: null,
     },
     {
-      id: "CM003",
-      name: "Giày Lười",
-      slug: "giay-luoi",
-      description: "Danh mục các sản phẩm giày lười",
-      isActive: false,
+      id: "S003",
+      value: 42,
+      description: "Kích thước lớn hơn cho giày thể thao",
       deletedAt: "2025-04-01T10:00:00Z",
       deletedBy: "Admin",
     },
@@ -50,10 +41,10 @@ const ListCategoriesPage: React.FC = () => {
     setSearchQuery("");
   };
 
-  const filteredCategories = categories.filter((category) => {
+  const filteredSizes = sizes.filter((size) => {
     return (
-      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      category.slug.toLowerCase().includes(searchQuery.toLowerCase())
+      size.value.toString().includes(searchQuery) ||
+      size.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
@@ -65,13 +56,13 @@ const ListCategoriesPage: React.FC = () => {
     setIsSearchVisible(true);
   };
 
-  const handleDeleteCategory = (id: string) => {
-    setCategories((prev) => prev.filter((category) => category.id !== id));
+  const handleDeleteSize = (id: string) => {
+    setSizes((prev) => prev.filter((size) => size.id !== id));
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Danh sách danh mục</h2>
+      <h2 className="text-2xl font-semibold mb-4">Danh sách kích thước</h2>
 
       {/* Search Bar */}
       <div className="mb-4 flex items-center">
@@ -94,17 +85,17 @@ const ListCategoriesPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Nhập tên hoặc slug danh mục"
+              placeholder="Nhập kích thước hoặc mô tả"
               className="px-4 py-2 w-full border rounded-md"
             />
           </div>
         )}
       </div>
-      {/* Add Category Button */}
+      {/* Add Size Button */}
       <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6">
-        + Thêm Danh Mục
+        + Thêm Kích Thước
       </button>
-      {/* Categories Table */}
+      {/* Sizes Table */}
       <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
         <thead className="bg-gray-100">
           <tr>
@@ -112,10 +103,7 @@ const ListCategoriesPage: React.FC = () => {
               ID
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Tên Danh Mục
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Slug
+              Giá Trị
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
               Mô Tả
@@ -124,29 +112,20 @@ const ListCategoriesPage: React.FC = () => {
               Trạng Thái
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Đã Xóa
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-medium">
               Thao Tác
             </th>
           </tr>
         </thead>
         <tbody>
-          {filteredCategories.map((category) => (
-            <tr key={category.id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{category.id}</td>
-              <td className="py-2 px-4 border-b text-sm">{category.name}</td>
-              <td className="py-2 px-4 border-b text-sm">{category.slug}</td>
+          {filteredSizes.map((size) => (
+            <tr key={size.id} className="hover:bg-gray-50">
+              <td className="py-2 px-4 border-b text-sm">{size.id}</td>
+              <td className="py-2 px-4 border-b text-sm">{size.value}</td>
+              <td className="py-2 px-4 border-b text-sm">{size.description}</td>
               <td className="py-2 px-4 border-b text-sm">
-                {category.description}
-              </td>
-              <td className="py-2 px-4 border-b text-sm">
-                {category.isActive ? "Hoạt động" : "Không hoạt động"}
-              </td>
-              <td className="py-2 px-4 border-b text-sm">
-                {category.deletedAt
-                  ? `Đã xóa bởi ${category.deletedBy || "N/A"}`
-                  : "Chưa xóa"}
+                {size.deletedAt
+                  ? `Đã xóa bởi ${size.deletedBy || "N/A"}`
+                  : "Hoạt động"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
                 <button
@@ -156,7 +135,7 @@ const ListCategoriesPage: React.FC = () => {
                   Sửa
                 </button>
                 <button
-                  onClick={() => handleDeleteCategory(category.id)}
+                  onClick={() => handleDeleteSize(size.id)}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
                 >
                   Xoá
@@ -170,4 +149,4 @@ const ListCategoriesPage: React.FC = () => {
   );
 };
 
-export default ListCategoriesPage;
+export default SizePage;

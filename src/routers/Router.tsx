@@ -1,6 +1,5 @@
-
-import OrderConfirmationPage from '../pages/OrderConfirmationPage/OrderConfirmationPage'
-import ProductDetailPage from '../pages/ProductDetailPage/ProductDetailPage'
+import OrderConfirmationPage from "../pages/OrderConfirmationPage/OrderConfirmationPage";
+import ProductDetailPage from "../pages/ProductDetailPage/ProductDetailPage";
 import { Route, Routes } from "react-router-dom";
 import LoginPage from "../pages/AuthPages/LoginPage";
 import RegisterPage from "../pages/AuthPages/RegisterPage";
@@ -23,31 +22,34 @@ import UserManageOrderPage from "../pages/MainPages/UserPage/UserManageOrderPage
 import LikePage from "../pages/MainPages/LikePage/LikePage";
 import ProductPage from "../pages/AdminPages/ProductPage/ProductPage";
 import DiscountPage from "../pages/AdminPages/DiscountPage/DiscountPage";
+import BrandPage from "../pages/AdminPages/BrandPage/BrandPage";
+import ColorPage from "../pages/AdminPages/ColorPage/ColorPage";
+import SizePage from "../pages/AdminPages/SizePage/SizePage";
 
 const Router = () => {
   return (
     <Routes>
-        {/* Các path không cần chỉnh layout */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/otp-verification" element={<OTPVerificationPage />} />
-        <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/user-information" element={<UserInformationPage/>} />
-        <Route path="/user-manage-order" element={<UserManageOrderPage/>} />
-        <Route path="/like-page" element={<LikePage/>} />
-        <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
-        <Route path="/product-detail" element={<ProductDetailPage />} />
-        {/* Các path cần chỉnh layout */}
-        {/* Admin */}
-        <Route path="/admin/*" element={<AdminLayout />} >
-            <Route path="" element={<Dashboard/>} />
-            <Route path="user" element={<div>Admin User</div>} />
-        </Route>
-        {/* User */}
-        <Route path="*" element={<MainLayout />} >
-            <Route path="" element={<LandingPage/>} />
-        </Route>
+      {/* Các path không cần chỉnh layout */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/otp-verification" element={<OTPVerificationPage />} />
+      <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+      <Route path="/cart" element={<CartPage />} />
+      <Route path="/user-information" element={<UserInformationPage />} />
+      <Route path="/user-manage-order" element={<UserManageOrderPage />} />
+      <Route path="/like-page" element={<LikePage />} />
+      <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+      <Route path="/product-detail" element={<ProductDetailPage />} />
+      {/* Các path cần chỉnh layout */}
+      {/* Admin */}
+      <Route path="/admin/*" element={<AdminLayout />}>
+        <Route path="" element={<Dashboard />} />
+        <Route path="user" element={<div>Admin User</div>} />
+      </Route>
+      {/* User */}
+      <Route path="*" element={<MainLayout />}>
+        <Route path="" element={<LandingPage />} />
+      </Route>
       {/* Các path không cần chỉnh layout */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -67,6 +69,9 @@ const Router = () => {
         <Route path="users" element={<ListCustomerPage />} />
         <Route path="edit-user" element={<EditCustomerPage />} />
         <Route path="categories" element={<ListCategoriesPage />} />
+        <Route path="brand" element={<BrandPage />} />
+        <Route path="color" element={<ColorPage />} />
+        <Route path="size" element={<SizePage />} />
         <Route path="add-categories" element={<AddCategoryPage />} />
         <Route path="edit-categories" element={<EditCategoryPage />} />
         <Route path="orders" element={<ListOrderPage />} />

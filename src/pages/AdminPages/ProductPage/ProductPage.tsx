@@ -3,14 +3,18 @@ import { useState } from "react";
 interface Product {
   id: string;
   name: string;
-  code: string;
+  slug: string;
+  description: string;
+  images: { url: string; public_id: string; isMain: boolean }[];
   category: string;
   brand: string;
   price: number;
-  warranty: string;
-  description: string;
-  image: string;
+  stockStatus: string;
+  isActive: boolean;
+  rating: number;
+  numReviews: number;
 }
+
 import AddProduct from "./AddProduct";
 import EditProduct from "./EditProduct";
 import DeleteProduct from "./DeleteProduct";
@@ -55,6 +59,50 @@ const ProductPage = () => {
     setSelectedProduct(null);
   };
 
+  const products: Product[] = [
+    {
+      id: "P001",
+      name: "Giày Thể Thao Nike Air Max",
+      slug: "giay-the-thao-nike-air-max",
+      description:
+        "Giày thể thao Nike Air Max với thiết kế hiện đại và thoải mái.",
+      images: [
+        {
+          url: "https://example.com/nike-air-max.jpg",
+          public_id: "nike-air-max",
+          isMain: true,
+        },
+      ],
+      category: "Giày Thể Thao",
+      brand: "Nike",
+      price: 2500000,
+      stockStatus: "in_stock",
+      isActive: true,
+      rating: 4.5,
+      numReviews: 120,
+    },
+    {
+      id: "P002",
+      name: "Giày Cao Gót Gucci",
+      slug: "giay-cao-got-gucci",
+      description: "Giày cao gót Gucci sang trọng và đẳng cấp.",
+      images: [
+        {
+          url: "https://example.com/gucci-heels.jpg",
+          public_id: "gucci-heels",
+          isMain: true,
+        },
+      ],
+      category: "Giày Cao Gót",
+      brand: "Gucci",
+      price: 5000000,
+      stockStatus: "low_stock",
+      isActive: true,
+      rating: 4.8,
+      numReviews: 85,
+    },
+  ];
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
@@ -66,6 +114,7 @@ const ProductPage = () => {
           + Sản Phẩm
         </button>
       </div>
+
       {showAddProduct && <AddProduct handleClose={handleCloseAddProduct} />}
       {showEditProduct && selectedProduct && (
         <EditProduct
@@ -79,144 +128,65 @@ const ProductPage = () => {
           handleDelete={handleConfirmDeleteProduct}
         />
       )}
+
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border">
           <thead>
             <tr>
               <th className="py-2 px-4 border font-normal">ID</th>
-              <th className="py-2 px-4 border font-normal">Mã Sản Phẩm</th>
               <th className="py-2 px-4 border font-normal">Tên Sản Phẩm</th>
-              <th className="py-2 px-4 border font-normal">Loại Sản Phẩm</th>
+              <th className="py-2 px-4 border font-normal">Slug</th>
+              <th className="py-2 px-4 border font-normal">Danh Mục</th>
               <th className="py-2 px-4 border font-normal">Thương Hiệu</th>
               <th className="py-2 px-4 border font-normal">Giá</th>
-              <th className="py-2 px-4 border font-normal">Giới Thiệu</th>
+              <th className="py-2 px-4 border font-normal">Trạng Thái</th>
               <th className="py-2 px-4 border font-normal">Hình Ảnh</th>
               <th className="py-2 px-4 border font-normal">Thao Tác</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="py-2 px-4 border">1</td>
-              <td className="py-2 px-4 border">SP001</td>
-              <td className="py-2 px-4 border">RAM</td>
-              <td className="py-2 px-4 border">DDR4</td>
-              <td className="py-2 px-4 border">Kingston</td>
-              <td className="py-2 px-4 border">850.000 VND</td>
-              <td className="py-2 px-4 border">
-                Ram Laptop Kingsdom 8GB Bus 3200
-              </td>
-              <td className="py-2 px-4 border text-center">
-                <div className="flex justify-center items-center">
+            {products.map((product) => (
+              <tr key={product.id}>
+                <td className="py-2 px-4 border">{product.id}</td>
+                <td className="py-2 px-4 border">{product.name}</td>
+                <td className="py-2 px-4 border">{product.slug}</td>
+                <td className="py-2 px-4 border">{product.category}</td>
+                <td className="py-2 px-4 border">{product.brand}</td>
+                <td className="py-2 px-4 border">
+                  {product.price.toLocaleString()} VND
+                </td>
+                <td className="py-2 px-4 border">
+                  {product.stockStatus === "in_stock"
+                    ? "Còn hàng"
+                    : product.stockStatus === "low_stock"
+                    ? "Sắp hết hàng"
+                    : "Hết hàng"}
+                </td>
+                <td className="py-2 px-4 border text-center">
                   <img
-                    src="/image/ddr4.jpg"
-                    sizes="(max-width: 640px) 100vw, 640px"
+                    src={product.images.find((img) => img.isMain)?.url || ""}
+                    alt={product.name}
                     className="w-16 h-16 object-cover"
                   />
-                </div>
-              </td>
-              <td className="py-2 px-4 border text-center">
-                <div className="flex justify-center gap-6">
-                  <button
-                    onClick={() =>
-                      handleEditProduct({
-                        id: "1",
-                        name: "RAM",
-                        code: "SP001",
-                        category: "DDR4",
-                        brand: "Kingston",
-                        price: 850000,
-                        warranty: "2 năm",
-                        description: "Ram Laptop Kingsdom 8GB Bus 3200",
-                        image: "/image/ddr4.jpg",
-                      })
-                    }
-                    className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition duration-300"
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleDeleteProduct({
-                        id: "1",
-                        name: "RAM",
-                        code: "SP001",
-                        category: "DDR4",
-                        brand: "Kingston",
-                        price: 850000,
-                        warranty: "2 năm",
-                        description: "Ram Laptop Kingsdom 8GB Bus 3200",
-                        image: "/image/ddr4.jpg",
-                      })
-                    }
-                    className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600 transition duration-300"
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td className="py-2 px-4 border">2</td>
-              <td className="py-2 px-4 border">SP002</td>
-              <td className="py-2 px-4 border">RAM</td>
-              <td className="py-2 px-4 border">DDR5</td>
-              <td className="py-2 px-4 border">Kingston</td>
-              <td className="py-2 px-4 border">1.960.000 VND</td>
-              <td className="py-2 px-4 border">
-                Ram Laptop Kingsdom 16GB Bus 3200
-              </td>
-              <td className="py-2 px-4 border text-center">
-                <div className="flex justify-center items-center">
-                  <img
-                    src="/image/ddr5.jpg"
-                    sizes="(max-width: 640px) 100vw, 640px"
-                    className="w-16 h-16 object-cover"
-                  />
-                </div>
-              </td>
-              <td className="py-2 px-4 border text-center">
-                <div className="flex justify-center gap-6">
-                  <button
-                    onClick={() =>
-                      handleEditProduct({
-                        id: "2",
-                        name: "RAM",
-                        code: "SP002",
-                        category: "DDR5",
-                        brand: "Kingston",
-                        price: 1960000,
-                        warranty: "2 năm",
-                        description: "Ram Laptop Kingsdom 16GB Bus 3200",
-                        image: "/image/ddr5.jpg",
-                      })
-                    }
-                    className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition duration-300"
-                  >
-                    Sửa
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      handleDeleteProduct({
-                        id: "2",
-                        name: "SSD",
-                        code: "SP002",
-                        category: "NVMe",
-                        brand: "Samsung",
-                        price: 1200000,
-                        warranty: "5 năm",
-                        description: "SSD Samsung 970 EVO Plus 500GB NVMe",
-                        image: "/image/ssd.jpg",
-                      })
-                    }
-                    className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600 transition duration-300"
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-            {/* Thêm các hàng khác */}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  <div className="flex justify-center gap-4">
+                    <button
+                      onClick={() => handleEditProduct(product)}
+                      className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition duration-300"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(product)}
+                      className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600 transition duration-300"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

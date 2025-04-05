@@ -1,44 +1,60 @@
 import React, { useState } from "react";
 import { IoIosSearch } from "react-icons/io";
 
-// Define the data type for categories
-interface Category {
+// Define the data type for brands
+interface Brand {
   id: string;
   name: string;
   slug: string;
   description: string;
+  logo: {
+    url: string;
+    public_id: string;
+  };
   isActive: boolean;
   deletedAt: string | null;
   deletedBy: string | null;
 }
 
-const ListCategoriesPage: React.FC = () => {
+const ListBrandsPage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [categories, setCategories] = useState<Category[]>([
+  const [brands, setBrands] = useState<Brand[]>([
     {
-      id: "CM001",
-      name: "Giày Thể Thao",
-      slug: "giay-the-thao",
-      description: "Danh mục các sản phẩm giày thể thao",
+      id: "BR001",
+      name: "Nike",
+      slug: "nike",
+      description: "Thương hiệu giày thể thao nổi tiếng toàn cầu",
+      logo: {
+        url: "https://example.com/nike-logo.png",
+        public_id: "nike-logo",
+      },
       isActive: true,
       deletedAt: null,
       deletedBy: null,
     },
     {
-      id: "CM002",
-      name: "Giày Cao Gót",
-      slug: "giay-cao-got",
-      description: "Danh mục các sản phẩm giày cao gót",
+      id: "BR002",
+      name: "Adidas",
+      slug: "adidas",
+      description: "Thương hiệu giày thể thao và thời trang nổi tiếng",
+      logo: {
+        url: "https://example.com/adidas-logo.png",
+        public_id: "adidas-logo",
+      },
       isActive: true,
       deletedAt: null,
       deletedBy: null,
     },
     {
-      id: "CM003",
-      name: "Giày Lười",
-      slug: "giay-luoi",
-      description: "Danh mục các sản phẩm giày lười",
+      id: "BR003",
+      name: "Puma",
+      slug: "puma",
+      description: "Thương hiệu giày thể thao với thiết kế năng động",
+      logo: {
+        url: "https://example.com/puma-logo.png",
+        public_id: "puma-logo",
+      },
       isActive: false,
       deletedAt: "2025-04-01T10:00:00Z",
       deletedBy: "Admin",
@@ -50,10 +66,10 @@ const ListCategoriesPage: React.FC = () => {
     setSearchQuery("");
   };
 
-  const filteredCategories = categories.filter((category) => {
+  const filteredBrands = brands.filter((brand) => {
     return (
-      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      category.slug.toLowerCase().includes(searchQuery.toLowerCase())
+      brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      brand.slug.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
@@ -65,13 +81,13 @@ const ListCategoriesPage: React.FC = () => {
     setIsSearchVisible(true);
   };
 
-  const handleDeleteCategory = (id: string) => {
-    setCategories((prev) => prev.filter((category) => category.id !== id));
+  const handleDeleteBrand = (id: string) => {
+    setBrands((prev) => prev.filter((brand) => brand.id !== id));
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Danh sách danh mục</h2>
+      <h2 className="text-2xl font-semibold mb-4">Danh sách thương hiệu</h2>
 
       {/* Search Bar */}
       <div className="mb-4 flex items-center">
@@ -94,17 +110,17 @@ const ListCategoriesPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Nhập tên hoặc slug danh mục"
+              placeholder="Nhập tên hoặc slug thương hiệu"
               className="px-4 py-2 w-full border rounded-md"
             />
           </div>
         )}
       </div>
-      {/* Add Category Button */}
+      {/* Add Brand Button */}
       <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6">
-        + Thêm Danh Mục
+        + Thêm Thương Hiệu
       </button>
-      {/* Categories Table */}
+      {/* Brands Table */}
       <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
         <thead className="bg-gray-100">
           <tr>
@@ -112,13 +128,16 @@ const ListCategoriesPage: React.FC = () => {
               ID
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Tên Danh Mục
+              Tên Thương Hiệu
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
               Slug
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
               Mô Tả
+            </th>
+            <th className="py-2 px-4 border-b text-left text-sm font-medium">
+              Logo
             </th>
             <th className="py-2 px-4 border-b text-left text-sm font-medium">
               Trạng Thái
@@ -132,20 +151,27 @@ const ListCategoriesPage: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredCategories.map((category) => (
-            <tr key={category.id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{category.id}</td>
-              <td className="py-2 px-4 border-b text-sm">{category.name}</td>
-              <td className="py-2 px-4 border-b text-sm">{category.slug}</td>
+          {filteredBrands.map((brand) => (
+            <tr key={brand.id} className="hover:bg-gray-50">
+              <td className="py-2 px-4 border-b text-sm">{brand.id}</td>
+              <td className="py-2 px-4 border-b text-sm">{brand.name}</td>
+              <td className="py-2 px-4 border-b text-sm">{brand.slug}</td>
               <td className="py-2 px-4 border-b text-sm">
-                {category.description}
+                {brand.description}
               </td>
               <td className="py-2 px-4 border-b text-sm">
-                {category.isActive ? "Hoạt động" : "Không hoạt động"}
+                <img
+                  src={brand.logo.url}
+                  alt={brand.name}
+                  className="h-10 w-10 object-contain"
+                />
               </td>
               <td className="py-2 px-4 border-b text-sm">
-                {category.deletedAt
-                  ? `Đã xóa bởi ${category.deletedBy || "N/A"}`
+                {brand.isActive ? "Hoạt động" : "Không hoạt động"}
+              </td>
+              <td className="py-2 px-4 border-b text-sm">
+                {brand.deletedAt
+                  ? `Đã xóa bởi ${brand.deletedBy || "N/A"}`
                   : "Chưa xóa"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
@@ -156,7 +182,7 @@ const ListCategoriesPage: React.FC = () => {
                   Sửa
                 </button>
                 <button
-                  onClick={() => handleDeleteCategory(category.id)}
+                  onClick={() => handleDeleteBrand(brand.id)}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
                 >
                   Xoá
@@ -170,4 +196,4 @@ const ListCategoriesPage: React.FC = () => {
   );
 };
 
-export default ListCategoriesPage;
+export default ListBrandsPage;
