@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
+import { authenticateApi } from "../../services/AuthenticationService";
 
 const OTPVerificationForm = () => {
   const [otp, setOtp] = useState("");
@@ -11,15 +11,12 @@ const OTPVerificationForm = () => {
   const handleVerify = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:5005/api/v1/auth/verify-otp",
-        {
-          email: email,
-          otp: otp,
-        }
-      );
-
-      if (response.data.success) {
+      const response = await authenticateApi.verifyOtp({
+        email: email,
+        otp: otp,
+      });
+      console.log("Phản hồi từ API:", response);
+      if (response.status === 200) {
         toast.success("Xác thực thành công!");
         // Điều hướng đến trang tiếp theo (ví dụ: trang đăng nhập)
         window.location.href = "/login";

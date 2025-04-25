@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
 import { toast } from "react-toastify";
 // @ts-ignore
 import "@fontsource/lobster";
+import { authenticateApi } from "../../services/AuthenticationService";
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -15,42 +15,43 @@ const LoginForm: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(
-        "http://localhost:5005/api/v1/auth/login",
-        {
-          email: loginEmail,
-          password: loginPassword,
-        }
-      );
-
-      if (response.data.success) {
-        toast.success("Đăng nhập thành công!");
-        navigate("/"); // Redirect to dashboard or home
+      const response = await authenticateApi.login({
+        email: loginEmail,
+        password: loginPassword,
+      });
+      console.log("🎉 Đăng nhập thành công:", response);
+      if (response.data.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Đăng nhập thất bại!");
+    } catch (error) {
+      console.error("🚨 Đăng nhập thất bại:", error);
+      alert("Email hoặc mật khẩu không đúng!");
     }
   };
 
   const handleRegister = async () => {
+    console.log("Hàm handleRegister được gọi");
     try {
-      const response = await axios.post(
-        "http://localhost:5005/api/v1/auth/register",
-        {
-          name: registerName,
-          email: registerEmail,
-          password: registerPassword,
-        }
-      );
+      const response = await authenticateApi.register({
+        name: registerName,
+        email: registerEmail,
+        password: registerPassword,
+      });
+      console.log("Phản hồi từ API:", response);
 
-      if (response.data.success) {
-        toast.success(
-          "Đăng ký thành công! Vui lòng kiểm tra email để xác thực."
+      if (response.status === 201) {
+        console.log(
+          "🎉 Đăng ký thành công! Vui lòng kiểm tra email để xác thực."
         );
-        navigate("/otp-verification", { state: { email: registerEmail } });
+        navigate("/otp-verification");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Đăng ký thất bại!");
+      console.error(
+        "🚨 Đăng ký thất bại:",
+        error.response?.data?.message || "Đăng ký thất bại!"
+      );
     }
   };
 
