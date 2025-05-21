@@ -6,29 +6,40 @@ export const SERVER_DOMAIN = import.meta.env.VITE_SERVER_DOMAIN;
 export const BaseApi = `http://${SERVER_DOMAIN}:${SERVER_PORT}`;
 
 export const axiosInstance = axios.create({
-    baseURL: BaseApi,
-    headers: {
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "69420"
-    },
+  baseURL: BaseApi,
+  headers: {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "69420",
+  },
 });
 export const axiosInstanceAuth = axios.create({
-    baseURL: BaseApi,
-    withCredentials: true,
-    headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + Cookie.get("token"),
-        "ngrok-skip-browser-warning": "69420"
-    },
+  baseURL: BaseApi,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + Cookie.get("token"),
+    "ngrok-skip-browser-warning": "69420",
+  },
 });
+axiosInstanceAuth.interceptors.request.use(
+  (config) => {
+    const token = Cookie.get("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      delete config.headers.Authorization;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export const axiosInstanceFile = axios.create({
-    baseURL: BaseApi,
-    withCredentials: true,
-    headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: "Bearer " + Cookie.get("token"),
-        "ngrok-skip-browser-warning": "69420"
-    },
+  baseURL: BaseApi,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "multipart/form-data",
+    Authorization: "Bearer " + Cookie.get("token"),
+    "ngrok-skip-browser-warning": "69420",
+  },
 });
-

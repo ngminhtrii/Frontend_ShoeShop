@@ -1,49 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
+import { categoryApi } from "../../../services/CategoryService";
 
-// Define the data type for categories
+// Định nghĩa lại interface cho đúng với dữ liệu backend trả về
 interface Category {
-  id: string;
+  _id: string;
   name: string;
   slug: string;
   description: string;
   isActive: boolean;
   deletedAt: string | null;
-  deletedBy: string | null;
+  deletedBy: string | { _id: string; name?: string } | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const ListCategoriesPage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      id: "CM001",
-      name: "Giày Thể Thao",
-      slug: "giay-the-thao",
-      description: "Danh mục các sản phẩm giày thể thao",
-      isActive: true,
-      deletedAt: null,
-      deletedBy: null,
-    },
-    {
-      id: "CM002",
-      name: "Giày Cao Gót",
-      slug: "giay-cao-got",
-      description: "Danh mục các sản phẩm giày cao gót",
-      isActive: true,
-      deletedAt: null,
-      deletedBy: null,
-    },
-    {
-      id: "CM003",
-      name: "Giày Lười",
-      slug: "giay-luoi",
-      description: "Danh mục các sản phẩm giày lười",
-      isActive: false,
-      deletedAt: "2025-04-01T10:00:00Z",
-      deletedBy: "Admin",
-    },
-  ]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await categoryApi.getAll();
+        setCategories(res.data.data || []);
+      } catch {
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleBack = () => {
     setIsSearchVisible(false);
@@ -65,8 +52,13 @@ const ListCategoriesPage: React.FC = () => {
     setIsSearchVisible(true);
   };
 
-  const handleDeleteCategory = (id: string) => {
-    setCategories((prev) => prev.filter((category) => category.id !== id));
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      await categoryApi.delete(id);
+      setCategories((prev) => prev.filter((category) => category._id !== id));
+    } catch {
+      // Xử lý lỗi nếu cần
+    }
   };
 
   return (
@@ -133,8 +125,8 @@ const ListCategoriesPage: React.FC = () => {
         </thead>
         <tbody>
           {filteredCategories.map((category) => (
-            <tr key={category.id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{category.id}</td>
+            <tr key={category._id} className="hover:bg-gray-50">
+              <td className="py-2 px-4 border-b text-sm">{category._id}</td>
               <td className="py-2 px-4 border-b text-sm">{category.name}</td>
               <td className="py-2 px-4 border-b text-sm">{category.slug}</td>
               <td className="py-2 px-4 border-b text-sm">
@@ -145,7 +137,11 @@ const ListCategoriesPage: React.FC = () => {
               </td>
               <td className="py-2 px-4 border-b text-sm">
                 {category.deletedAt
-                  ? `Đã xóa bởi ${category.deletedBy || "N/A"}`
+                  ? `Đã xóa bởi ${
+                      typeof category.deletedBy === "object"
+                        ? category.deletedBy?.name || "N/A"
+                        : "N/A"
+                    }`
                   : "Chưa xóa"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
@@ -156,7 +152,7 @@ const ListCategoriesPage: React.FC = () => {
                   Sửa
                 </button>
                 <button
-                  onClick={() => handleDeleteCategory(category.id)}
+                  onClick={() => handleDeleteCategory(category._id)}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
                 >
                   Xoá

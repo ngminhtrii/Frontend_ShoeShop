@@ -1,40 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
+import { sizeApi } from "../../../services/Size";
 
 interface Size {
-  id: string;
-  value: number; // Giá trị kích thước
-  description: string; // Mô tả kích thước
+  _id: string;
+  value: number;
+  description: string;
   deletedAt: string | null;
-  deletedBy: string | null;
+  deletedBy: string | { _id: string; name?: string } | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const SizePage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sizes, setSizes] = useState<Size[]>([
-    {
-      id: "S001",
-      value: 38,
-      description: "Kích thước phổ biến cho giày nam",
-      deletedAt: null,
-      deletedBy: null,
-    },
-    {
-      id: "S002",
-      value: 40,
-      description: "Kích thước phổ biến cho giày nữ",
-      deletedAt: null,
-      deletedBy: null,
-    },
-    {
-      id: "S003",
-      value: 42,
-      description: "Kích thước lớn hơn cho giày thể thao",
-      deletedAt: "2025-04-01T10:00:00Z",
-      deletedBy: "Admin",
-    },
-  ]);
+  const [sizes, setSizes] = useState<Size[]>([]);
+
+  useEffect(() => {
+    const fetchSizes = async () => {
+      try {
+        const res = await sizeApi.getAll();
+        setSizes(res.data.data || []);
+      } catch {
+        setSizes([]);
+      }
+    };
+    fetchSizes();
+  }, []);
 
   const handleBack = () => {
     setIsSearchVisible(false);
@@ -56,8 +49,13 @@ const SizePage: React.FC = () => {
     setIsSearchVisible(true);
   };
 
-  const handleDeleteSize = (id: string) => {
-    setSizes((prev) => prev.filter((size) => size.id !== id));
+  const handleDeleteSize = async (_id: string) => {
+    try {
+      await sizeApi.delete(_id);
+      setSizes((prev) => prev.filter((size) => size._id !== _id));
+    } catch {
+      // Xử lý lỗi nếu cần
+    }
   };
 
   return (
@@ -118,13 +116,17 @@ const SizePage: React.FC = () => {
         </thead>
         <tbody>
           {filteredSizes.map((size) => (
-            <tr key={size.id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{size.id}</td>
+            <tr key={size._id} className="hover:bg-gray-50">
+              <td className="py-2 px-4 border-b text-sm">{size._id}</td>
               <td className="py-2 px-4 border-b text-sm">{size.value}</td>
               <td className="py-2 px-4 border-b text-sm">{size.description}</td>
               <td className="py-2 px-4 border-b text-sm">
                 {size.deletedAt
-                  ? `Đã xóa bởi ${size.deletedBy || "N/A"}`
+                  ? `Đã xóa bởi ${
+                      typeof size.deletedBy === "object"
+                        ? size.deletedBy?.name || "N/A"
+                        : "N/A"
+                    }`
                   : "Hoạt động"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
@@ -135,7 +137,7 @@ const SizePage: React.FC = () => {
                   Sửa
                 </button>
                 <button
-                  onClick={() => handleDeleteSize(size.id)}
+                  onClick={() => handleDeleteSize(size._id)}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
                 >
                   Xoá

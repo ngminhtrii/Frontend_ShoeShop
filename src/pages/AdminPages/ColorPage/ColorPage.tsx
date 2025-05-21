@@ -1,48 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
+import { colorApi } from "../../../services/ColorService";
 
 interface Color {
-  id: string;
+  _id: string;
   name: string;
-  code: string | null; // Mã màu hex
-  colors: string[]; // Mảng chứa 2 màu nếu là half
-  type: "solid" | "half"; // solid hoặc half
+  code: string | null;
+  colors: string[];
+  type: "solid" | "half";
   deletedAt: string | null;
-  deletedBy: string | null;
+  deletedBy: string | { _id: string; name?: string } | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const ColorPage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [colors, setColors] = useState<Color[]>([
-    {
-      id: "C001",
-      name: "Đỏ",
-      code: "#FF0000",
-      colors: [],
-      type: "solid",
-      deletedAt: null,
-      deletedBy: null,
-    },
-    {
-      id: "C002",
-      name: "Xanh Lá",
-      code: "#00FF00",
-      colors: [],
-      type: "solid",
-      deletedAt: null,
-      deletedBy: null,
-    },
-    {
-      id: "C003",
-      name: "Half Đỏ-Xanh",
-      code: null,
-      colors: ["#FF0000", "#0000FF"],
-      type: "half",
-      deletedAt: "2025-04-01T10:00:00Z",
-      deletedBy: "Admin",
-    },
-  ]);
+  const [colors, setColors] = useState<Color[]>([]);
+
+  useEffect(() => {
+    const fetchColors = async () => {
+      try {
+        const res = await colorApi.getAll();
+        setColors(res.data.data || []);
+      } catch {
+        setColors([]);
+      }
+    };
+    fetchColors();
+  }, []);
 
   const handleBack = () => {
     setIsSearchVisible(false);
@@ -61,8 +48,13 @@ const ColorPage: React.FC = () => {
     setIsSearchVisible(true);
   };
 
-  const handleDeleteColor = (id: string) => {
-    setColors((prev) => prev.filter((color) => color.id !== id));
+  const handleDeleteColor = async (_id: string) => {
+    try {
+      await colorApi.delete(_id);
+      setColors((prev) => prev.filter((color) => color._id !== _id));
+    } catch {
+      // Xử lý lỗi nếu cần
+    }
   };
 
   return (
@@ -126,24 +118,42 @@ const ColorPage: React.FC = () => {
         </thead>
         <tbody>
           {filteredColors.map((color) => (
-            <tr key={color.id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{color.id}</td>
+            <tr key={color._id} className="hover:bg-gray-50">
+              <td className="py-2 px-4 border-b text-sm">{color._id}</td>
               <td className="py-2 px-4 border-b text-sm">{color.name}</td>
               <td className="py-2 px-4 border-b text-sm">
                 {color.type === "solid" ? (
                   <div
-                    className="w-6 h-6 rounded-full"
+                    className="w-6 h-6 rounded-full border"
                     style={{ backgroundColor: color.code || "#FFFFFF" }}
                   ></div>
                 ) : (
-                  <div className="flex gap-1">
-                    {color.colors.map((c, index) => (
-                      <div
-                        key={index}
-                        className="w-6 h-6 rounded-full"
-                        style={{ backgroundColor: c }}
-                      ></div>
-                    ))}
+                  <div
+                    className="w-6 h-6 rounded-full border relative overflow-hidden flex-shrink-0"
+                    style={{ minWidth: 24, minHeight: 24 }}
+                  >
+                    <div
+                      style={{
+                        backgroundColor: color.colors[0] || "#fff",
+                        width: "100%",
+                        height: "100%",
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        clipPath: "inset(0 50% 0 0)",
+                      }}
+                    />
+                    <div
+                      style={{
+                        backgroundColor: color.colors[1] || "#fff",
+                        width: "100%",
+                        height: "100%",
+                        position: "absolute",
+                        right: 0,
+                        top: 0,
+                        clipPath: "inset(0 0 0 50%)",
+                      }}
+                    />
                   </div>
                 )}
               </td>
@@ -152,7 +162,11 @@ const ColorPage: React.FC = () => {
               </td>
               <td className="py-2 px-4 border-b text-sm">
                 {color.deletedAt
-                  ? `Đã xóa bởi ${color.deletedBy || "N/A"}`
+                  ? `Đã xóa bởi ${
+                      typeof color.deletedBy === "object"
+                        ? color.deletedBy?.name || "N/A"
+                        : "N/A"
+                    }`
                   : "Hoạt động"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
@@ -163,7 +177,7 @@ const ColorPage: React.FC = () => {
                   Sửa
                 </button>
                 <button
-                  onClick={() => handleDeleteColor(color.id)}
+                  onClick={() => handleDeleteColor(color._id)}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
                 >
                   Xoá

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import Cookie from "js-cookie";
 //import { toast } from "react-toastify";
 // @ts-ignore
 import "@fontsource/lobster";
@@ -19,6 +20,9 @@ const LoginForm: React.FC = () => {
         email: loginEmail,
         password: loginPassword,
       });
+
+      Cookie.set("token", response.data.token, { expires: 7 });
+
       console.log("🎉 Đăng nhập thành công:", response);
       if (response.data.role === "admin") {
         navigate("/admin");

@@ -1,65 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
+import { brandApi } from "../../../services/BrandService";
 
-// Define the data type for brands
+// Định nghĩa lại interface cho đúng với dữ liệu backend trả về
 interface Brand {
-  id: string;
+  _id: string;
   name: string;
   slug: string;
   description: string;
-  logo: {
+  logo?: {
     url: string;
     public_id: string;
   };
   isActive: boolean;
   deletedAt: string | null;
-  deletedBy: string | null;
+  deletedBy: string | { _id: string; name?: string } | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const ListBrandsPage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [brands, setBrands] = useState<Brand[]>([
-    {
-      id: "BR001",
-      name: "Nike",
-      slug: "nike",
-      description: "Thương hiệu giày thể thao nổi tiếng toàn cầu",
-      logo: {
-        url: "https://example.com/nike-logo.png",
-        public_id: "nike-logo",
-      },
-      isActive: true,
-      deletedAt: null,
-      deletedBy: null,
-    },
-    {
-      id: "BR002",
-      name: "Adidas",
-      slug: "adidas",
-      description: "Thương hiệu giày thể thao và thời trang nổi tiếng",
-      logo: {
-        url: "https://example.com/adidas-logo.png",
-        public_id: "adidas-logo",
-      },
-      isActive: true,
-      deletedAt: null,
-      deletedBy: null,
-    },
-    {
-      id: "BR003",
-      name: "Puma",
-      slug: "puma",
-      description: "Thương hiệu giày thể thao với thiết kế năng động",
-      logo: {
-        url: "https://example.com/puma-logo.png",
-        public_id: "puma-logo",
-      },
-      isActive: false,
-      deletedAt: "2025-04-01T10:00:00Z",
-      deletedBy: "Admin",
-    },
-  ]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const res = await brandApi.getAll();
+        setBrands(res.data.data || []);
+      } catch {
+        setBrands([]);
+      }
+    };
+    fetchBrands();
+  }, []);
 
   const handleBack = () => {
     setIsSearchVisible(false);
@@ -81,8 +56,13 @@ const ListBrandsPage: React.FC = () => {
     setIsSearchVisible(true);
   };
 
-  const handleDeleteBrand = (id: string) => {
-    setBrands((prev) => prev.filter((brand) => brand.id !== id));
+  const handleDeleteBrand = async (_id: string) => {
+    try {
+      await brandApi.delete(_id);
+      setBrands((prev) => prev.filter((brand) => brand._id !== _id));
+    } catch {
+      // Xử lý lỗi nếu cần
+    }
   };
 
   return (
@@ -152,26 +132,32 @@ const ListBrandsPage: React.FC = () => {
         </thead>
         <tbody>
           {filteredBrands.map((brand) => (
-            <tr key={brand.id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{brand.id}</td>
+            <tr key={brand._id} className="hover:bg-gray-50">
+              <td className="py-2 px-4 border-b text-sm">{brand._id}</td>
               <td className="py-2 px-4 border-b text-sm">{brand.name}</td>
               <td className="py-2 px-4 border-b text-sm">{brand.slug}</td>
               <td className="py-2 px-4 border-b text-sm">
                 {brand.description}
               </td>
               <td className="py-2 px-4 border-b text-sm">
-                <img
-                  src={brand.logo.url}
-                  alt={brand.name}
-                  className="h-10 w-10 object-contain"
-                />
+                {brand.logo?.url && (
+                  <img
+                    src={brand.logo.url}
+                    alt={brand.name}
+                    className="h-10 w-10 object-contain"
+                  />
+                )}
               </td>
               <td className="py-2 px-4 border-b text-sm">
                 {brand.isActive ? "Hoạt động" : "Không hoạt động"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
                 {brand.deletedAt
-                  ? `Đã xóa bởi ${brand.deletedBy || "N/A"}`
+                  ? `Đã xóa bởi ${
+                      typeof brand.deletedBy === "object"
+                        ? brand.deletedBy?.name || "N/A"
+                        : "N/A"
+                    }`
                   : "Chưa xóa"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
@@ -182,7 +168,7 @@ const ListBrandsPage: React.FC = () => {
                   Sửa
                 </button>
                 <button
-                  onClick={() => handleDeleteBrand(brand.id)}
+                  onClick={() => handleDeleteBrand(brand._id)}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
                 >
                   Xoá
