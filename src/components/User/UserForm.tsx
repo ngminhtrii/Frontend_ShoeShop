@@ -1,93 +1,99 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { inforApi } from "../../services/InforService";
+import Cookie from "js-cookie";
+
+interface Address {
+  fullName: string;
+  phone: string;
+  province: string;
+  district: string;
+  ward: string;
+  addressDetail: string;
+  isDefault: boolean;
+  _id: string;
+}
+
+interface User {
+  avatar?: { url: string };
+  name: string;
+  email: string;
+  addresses: Address[];
+}
 
 const UserForm: React.FC = () => {
-  const [formData, setFormData] = useState({
-    name: "NguyenMinhTri",
-    email: "ngminhtri2203@gmail.com",
-    phone: "0816288946",
-    dob: "2003-02-02",
-  });
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    // Kiểm tra đăng nhập
+    const token = localStorage.getItem("accessToken") || Cookie.get("token");
+    if (!token || token === "null" || token === "undefined") {
+      navigate("/login");
+      return;
+    }
+    // Lấy thông tin user
+    const fetchProfile = async () => {
+      try {
+        const res = await inforApi.getProfile();
+        setUser(res.data.user);
+      } catch {
+        navigate("/login");
+      }
+    };
+    fetchProfile();
+  }, [navigate]);
+
+  if (!user) return null;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg mx-auto">
-      {/* Tiêu đề */}
       <h2 className="text-2xl font-bold mb-3 text-gray-800">
         Thông tin tài khoản
       </h2>
-
-      {/* Form */}
-      <form className="flex flex-col gap-3">
-        <div>
-          <label className="block font-bold text-sm text-gray-700">
-            Họ tên
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-
-        <div>
-          <label className="block font-bold text-sm text-gray-700">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-
-        <div>
-          <label className="block font-bold text-sm text-gray-700">
-            Số điện thoại
-          </label>
-          <input
-            type="text"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-
-        <div>
-          <label className="block font-bold text-sm text-gray-700">
-            Ngày sinh
-          </label>
-          <input
-            type="date"
-            name="dob"
-            value={formData.dob}
-            onChange={handleChange}
-            onInput={(e) => {
-              const input = e.target as HTMLInputElement;
-              let value = input.value;
-              let parts = value.split("-");
-              if (parts[0] && parts[0].length > 4) {
-                parts[0] = parts[0].slice(0, 4); // Giới hạn năm tối đa 4 chữ số
-                input.value = parts.join("-");
-              }
-            }}
-            className="w-full border px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-
-        {/* Nút Cập nhật */}
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded-md mt-2 hover:bg-green-700 transition"
-        >
-          Cập nhật
-        </button>
-      </form>
+      <div className="flex flex-col items-center mb-4">
+        <img
+          src={
+            user.avatar?.url ||
+            "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.name)
+          }
+          alt="avatar"
+          className="w-24 h-24 rounded-full border mb-2 object-cover"
+        />
+        <div className="font-semibold text-lg">{user.name}</div>
+        <div className="text-gray-500">{user.email}</div>
+      </div>
+      <div>
+        <h3 className="font-bold mb-2">Địa chỉ:</h3>
+        {user.addresses && user.addresses.length > 0 ? (
+          <ul className="space-y-2">
+            {user.addresses.map((addr) => (
+              <li
+                key={addr._id}
+                className={`border rounded p-2 ${
+                  addr.isDefault ? "border-green-500" : "border-gray-300"
+                }`}
+              >
+                <div>
+                  <span className="font-semibold">{addr.fullName}</span> -{" "}
+                  {addr.phone}
+                </div>
+                <div>
+                  {addr.addressDetail}, {addr.ward}, {addr.district},{" "}
+                  {addr.province}
+                </div>
+                {addr.isDefault && (
+                  <span className="text-green-600 text-xs font-semibold">
+                    [Mặc định]
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="text-gray-500">Chưa có địa chỉ nào.</div>
+        )}
+      </div>
     </div>
   );
 };

@@ -67,7 +67,7 @@ const MainNavbar = () => {
           </Link>
         </li>
 
-        {/* Yêu thích */}
+        {/* Infor */}
         <li>
           <Link to="/user-information" className="relative">
             <AiOutlineUser className="text-2xl text-gray-700 hover:text-red-500 transition" />

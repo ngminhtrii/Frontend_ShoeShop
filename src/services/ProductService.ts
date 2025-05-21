@@ -33,4 +33,16 @@ export const productApi = {
   // Cập nhật trạng thái tồn kho sản phẩm
   updateStockStatus: (id: string) =>
     axiosInstanceAuth.post(`${API_PREFIX}/${id}/update-stock-status`),
+
+  // User
+
+  // Lấy danh sách sản phẩm của user
+  getAllProductUser: (params?: any) =>
+    axiosInstanceAuth.get("http://localhost:5005/api/v1/products", { params }),
+  // Lấy danh sách sản phẩm mới của user
+  getAllProductNew: (params?: any) =>
+    axiosInstanceAuth.get(
+      "http://localhost:5005/api/v1/products/new-arrivals?limit=10",
+      { params }
+    ),
 };
