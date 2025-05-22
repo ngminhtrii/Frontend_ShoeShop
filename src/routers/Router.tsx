@@ -13,7 +13,7 @@ import Dashboard from "../pages/AdminPages/DashboardPage/Dashboard";
 import ListCustomerPage from "../pages/AdminPages/AdminUser/CustomerPage";
 import EditCustomerPage from "../pages/AdminPages/AdminUser/EditUser";
 import ListCategoriesPage from "../pages/AdminPages/AdminCategories/CategoriesPage";
-import AddCategoryPage from "../pages/AdminPages/AdminCategories/AddCategories";
+//import AddCategoryPage from "../pages/AdminPages/AdminCategories/AddCategories";
 import EditCategoryPage from "../pages/AdminPages/AdminCategories/EditCategories";
 import ListOrderPage from "../pages/AdminPages/AdminOrders/OrderPage";
 import CartPage from "../pages/MainPages/CartPage/CartPage";
@@ -39,7 +39,7 @@ const Router = () => {
       <Route path="/user-manage-order" element={<UserManageOrderPage />} />
       <Route path="/like-page" element={<LikePage />} />
       <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
-      <Route path="/product-detail" element={<ProductDetailPage />} />
+      <Route path="/product-detail/:id" element={<ProductDetailPage />} />
       {/* Các path cần chỉnh layout */}
       {/* Admin */}
       <Route path="/admin/*" element={<AdminLayout />}>
@@ -72,7 +72,7 @@ const Router = () => {
         <Route path="brand" element={<BrandPage />} />
         <Route path="color" element={<ColorPage />} />
         <Route path="size" element={<SizePage />} />
-        <Route path="add-categories" element={<AddCategoryPage />} />
+        {/*<Route path="add-categories" element={<AddCategoryPage/>} />*/}
         <Route path="edit-categories" element={<EditCategoryPage />} />
         <Route path="orders" element={<ListOrderPage />} />
       </Route>

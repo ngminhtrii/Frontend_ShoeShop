@@ -45,4 +45,7 @@ export const productApi = {
       "http://localhost:5005/api/v1/products/new-arrivals?limit=10",
       { params }
     ),
+  // Lay chi tiet san pham theo id
+  getProductById: (id: string) =>
+    axiosInstanceAuth.get(`http://localhost:5005/api/v1/products/${id}`),
 };

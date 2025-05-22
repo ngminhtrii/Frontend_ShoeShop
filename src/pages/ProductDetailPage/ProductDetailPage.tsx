@@ -1,27 +1,41 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import MainNavbar from "../../components/Navbar/MainNavbar";
 import ProductDetail from "../../components/ProductDetail/ProductDetail";
+import { productApi } from "../../services/ProductService";
 
 const ProductDetailPage: React.FC = () => {
-  const product = {
-    name: "Màn hình LG 24MR400-B",
-    price: 2250000,
-    image: "/image/product.jpg",
-    description:
-      "Màn hình LG được biết đến với khả năng hiển thị vượt trội so với những sản phẩm trong cùng phân khúc và nhu cầu sử dụng như làm việc, học tập...",
-  };
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<any>(null);
+  const [attributes, setAttributes] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const similarProducts = [
-    { id: 1, name: "Tên sản phẩm", price: "Giá sản phẩm", image: "/sp.png" },
-    { id: 2, name: "Tên sản phẩm", price: "Giá sản phẩm", image: "/sp.png" },
-    { id: 3, name: "Tên sản phẩm", price: "Giá sản phẩm", image: "/sp.png" },
-    { id: 4, name: "Tên sản phẩm", price: "Giá sản phẩm", image: "/sp.png" },
-  ];
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        if (id) {
+          const res = await productApi.getProductById(id);
+          setProduct(res.data.product);
+          setAttributes(res.data.attributes);
+        }
+      } catch {
+        setProduct(null);
+        setAttributes(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [id]);
+
+  if (loading) return <div>Đang tải...</div>;
+  if (!product) return <div>Không tìm thấy sản phẩm.</div>;
 
   return (
     <div className="min-h-screen bg-white">
       <MainNavbar />
-      <ProductDetail product={product} similarProducts={similarProducts} />
+      <ProductDetail product={product} attributes={attributes} />
     </div>
   );
 };

@@ -1,92 +1,95 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface ProductDetailProps {
-  product: {
-    name: string;
-    price: number;
-    image: string;
-    description: string;
-  };
-  similarProducts: { id: number; name: string; price: string; image: string }[];
+  product: any;
+  attributes?: any;
+  similarProducts?: any[];
 }
 
 const ProductDetail: React.FC<ProductDetailProps> = ({
   product,
-  similarProducts,
+  attributes,
+  similarProducts = [],
 }) => {
-  // Thông tin sản phẩm 1 từ LandingPage
-  const productData = {
-    name: "Giày Sandal Nam 7081 - Sandal Nam Quai Ngang Chéo Phối Lót Dán Thời Trang, Sandal Nam Công Sở Năng Động, Trẻ Trung.",
-    price: 1000000,
-    image:
-      "https://firebasestorage.googleapis.com/v0/b/refreshing-well-408704.appspot.com/o/mwc%20(2).jpg?alt=media&token=79e7a687-b564-45c2-830e-58a4255de418",
-    description:
-      "Giày Sandal Nam 7081 được thiết kế với quai ngang chéo phối lót dán, mang lại sự thoải mái và thời trang. Phù hợp cho công sở và các hoạt động năng động, trẻ trung.",
-  };
-
   const [activeTab, setActiveTab] = useState("details");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const handleTabClick = (tab: string) => {
-    setActiveTab(tab);
-  };
+  useEffect(() => {
+    if (!product?.images?.length) return;
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
+    }, 3000); // đổi ảnh mỗi 3 giây
+    return () => clearInterval(interval);
+  }, [product.images]);
+
+  if (!product) return <div>Không tìm thấy sản phẩm.</div>;
+
+  const currentImage = product.images?.[currentImageIndex];
 
   return (
     <div className="max-w-7xl mx-auto mt-10">
-      {/* Phần thông tin sản phẩm */}
+      {/* Thông tin sản phẩm */}
       <div className="flex items-start space-x-6">
-        {/* Ảnh sản phẩm */}
-        <img
-          src={productData.image}
-          alt={productData.name}
-          className="w-1/2 max-w-sm h-auto object-contain rounded-lg"
-        />
+        {/* Ảnh sản phẩm với slideshow */}
+        <div className="relative w-80 h-80">
+          {currentImage && (
+            <img
+              key={currentImage._id || currentImage.public_id}
+              src={currentImage.url}
+              alt={product.name}
+              className="w-80 h-80 object-cover rounded transition-all duration-500"
+            />
+          )}
+          {/* Chấm tròn chuyển ảnh */}
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+            {product.images?.map((_: any, idx: number) => (
+              <span
+                key={idx}
+                className={`w-2 h-2 rounded-full ${
+                  idx === currentImageIndex ? "bg-red-500" : "bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
         {/* Thông tin sản phẩm */}
         <div className="flex-1">
-          <h2 className="text-2xl text-black">{productData.name}</h2>
+          <h2 className="text-2xl text-black font-bold">{product.name}</h2>
           <div className="flex items-center mt-4 space-x-4">
-            <span className="text-xl">⭐️⭐️⭐️⭐️⭐️</span>
-            <span className="text-gray-600">4.8/5 (120 đánh giá)</span>
-            <span className="text-gray-600">❤️ 250 lượt thích</span>
+            <span className="text-xl">⭐️ {product.rating || 0}</span>
+            <span className="text-gray-600">{product.numReviews} đánh giá</span>
+            <span className="text-gray-600">
+              {product.totalQuantity} lượt mua
+            </span>
           </div>
-          <p className="text-3xl text-red-500 mt-2">
-            {productData.price.toLocaleString()}đ
-          </p>
-          <div className="flex items-center mt-4">
-            <span className="text-gray-600 font-bold mr-4">Màu sắc:</span>
-            <div
-              className="w-6 h-6 rounded-full"
-              style={{ backgroundColor: "black" }}
-            ></div>
-            <div
-              className="w-6 h-6 rounded-full ml-2"
-              style={{
-                background: "linear-gradient(to right, #000 50%, #D9D9D9 50%)",
-              }}
-            ></div>
-          </div>
-          <div className="flex items-center mt-4">
-            <span className="text-gray-600 font-bold mr-4">Kích thước:</span>
-            <div className="flex space-x-2">
-              {["39", "40", "41", "42"].map((size) => (
-                <span
-                  key={size}
-                  className="px-3 py-1 border rounded-lg cursor-pointer"
-                >
-                  {size}
+          <div className="flex items-center space-x-4 mt-2">
+            <span className="text-3xl text-red-500 font-bold">
+              {product.price?.toLocaleString()}đ
+            </span>
+            {product.hasDiscount && (
+              <>
+                <span className="line-through text-gray-500 text-lg">
+                  {product.originalPrice?.toLocaleString()}đ
                 </span>
-              ))}
-            </div>
+              </>
+            )}
           </div>
-          <div className="flex space-x-4 mt-6">
-            <button className="bg-red-500 text-white px-6 py-2 font-bold rounded-lg">
-              Yêu thích
-            </button>
-            <button className="bg-yellow-500 text-white px-6 py-2 font-bold rounded-lg">
-              Giỏ hàng
-            </button>
-            <button className="bg-green-500 text-white px-6 py-2 font-bold rounded-lg">
-              Đặt hàng
-            </button>
+          <span className="text-sm text-red-400 font-semibold">
+            Giảm {product.discountPercent}%
+          </span>
+          <div className="mt-2">
+            <b>Danh mục:</b> {product.category?.name}
+          </div>
+          <div className="mt-2 flex items-center">
+            <b>Thương hiệu:</b>
+            {product.brand?.logo && (
+              <img
+                src={product.brand.logo}
+                //alt={product.brand.name}
+                className="h-8 w-16 object-contain mx-2 inline-block"
+              />
+            )}
           </div>
         </div>
       </div>
@@ -100,7 +103,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 ? "border-b-2 border-red-500 text-red-500"
                 : "text-gray-600"
             }`}
-            onClick={() => handleTabClick("details")}
+            onClick={() => setActiveTab("details")}
           >
             Chi tiết sản phẩm
           </button>
@@ -110,7 +113,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 ? "border-b-2 border-red-500 text-red-500"
                 : "text-gray-600"
             }`}
-            onClick={() => handleTabClick("comments")}
+            onClick={() => setActiveTab("comments")}
           >
             Bình luận
           </button>
@@ -121,7 +124,81 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
           {activeTab === "details" && (
             <div>
               <h3 className="text-lg font-bold">Chi tiết sản phẩm</h3>
-              <p className="text-gray-600">{productData.description}</p>
+              <p className="text-gray-600">{product.description}</p>
+              {attributes && (
+                <div className="mt-4">
+                  <div className="mb-2">
+                    <b>Màu sắc:</b>{" "}
+                    {attributes.colors?.map((color: any) =>
+                      color.type === "solid" ? (
+                        <span key={color._id} className="inline-block mr-2">
+                          <span
+                            className="inline-block w-6 h-6 rounded-full border align-middle"
+                            style={{ backgroundColor: color.code || "#fff" }}
+                          ></span>{" "}
+                          {color.name}
+                        </span>
+                      ) : (
+                        <span key={color._id} className="inline-block mr-2">
+                          <span
+                            className="inline-block w-6 h-6 rounded-full border align-middle relative overflow-hidden"
+                            style={{ minWidth: 24, minHeight: 24 }}
+                          >
+                            <span
+                              style={{
+                                backgroundColor: color.colors[0] || "#fff",
+                                width: "100%",
+                                height: "100%",
+                                position: "absolute",
+                                left: 0,
+                                top: 0,
+                                clipPath: "inset(0 50% 0 0)",
+                              }}
+                            />
+                            <span
+                              style={{
+                                backgroundColor: color.colors[1] || "#fff",
+                                width: "100%",
+                                height: "100%",
+                                position: "absolute",
+                                right: 0,
+                                top: 0,
+                                clipPath: "inset(0 0 0 50%)",
+                              }}
+                            />
+                          </span>{" "}
+                          {color.name}
+                        </span>
+                      )
+                    )}
+                  </div>
+                  <div className="mb-2">
+                    <b>Kích thước:</b>{" "}
+                    {attributes.sizes?.map((size: any) => (
+                      <span key={size._id} className="inline-block mr-2">
+                        {size.value} ({size.description})
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mb-2">
+                    <b>Giới tính:</b>{" "}
+                    {attributes.genders?.map((g: any) => (
+                      <span key={g.id} className="inline-block mr-2">
+                        {g.name}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mb-2">
+                    <b>Khoảng giá:</b>{" "}
+                    {attributes.priceRange && (
+                      <span>
+                        {attributes.priceRange.min?.toLocaleString()} đ -{" "}
+                        {attributes.priceRange.max?.toLocaleString()} đ
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {activeTab === "comments" && (
@@ -134,22 +211,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       </div>
 
       {/* Sản phẩm tương tự */}
-      <div className="text-left mt-6 px-6">
-        <h3 className="text-lg text-center">SẢN PHẨM TƯƠNG TỰ</h3>
-        <div className="grid grid-cols-4 gap-4 mt-4">
-          {similarProducts.map((sp) => (
-            <div key={sp.id} className="border p-4 text-center rounded-lg">
-              <img
-                src={sp.image}
-                alt={sp.name}
-                className="w-full h-24 object-cover rounded"
-              />
-              <p className="text-gray-700 mt-2">{sp.name}</p>
-              <p className="text-red-600 font-bold">{sp.price}</p>
-            </div>
-          ))}
+      {similarProducts && similarProducts.length > 0 && (
+        <div className="text-left mt-6 px-6">
+          <h3 className="text-lg text-center">SẢN PHẨM TƯƠNG TỰ</h3>
+          <div className="grid grid-cols-4 gap-4 mt-4">
+            {similarProducts.map((sp) => (
+              <div key={sp.id} className="border p-4 text-center rounded-lg">
+                <img
+                  src={sp.image}
+                  alt={sp.name}
+                  className="w-full h-24 object-cover rounded"
+                />
+                <p className="text-gray-700 mt-2">{sp.name}</p>
+                <p className="text-red-600 font-bold">{sp.price}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
