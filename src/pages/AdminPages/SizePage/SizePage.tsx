@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
 import { sizeApi } from "../../../services/Size";
+import AddSize from "./AddSixe";
 
 interface Size {
   _id: string;
@@ -16,16 +17,18 @@ const SizePage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sizes, setSizes] = useState<Size[]>([]);
+  const [showAddSize, setShowAddSize] = useState(false);
+
+  const fetchSizes = async () => {
+    try {
+      const res = await sizeApi.getAll();
+      setSizes(res.data.data || []);
+    } catch {
+      setSizes([]);
+    }
+  };
 
   useEffect(() => {
-    const fetchSizes = async () => {
-      try {
-        const res = await sizeApi.getAll();
-        setSizes(res.data.data || []);
-      } catch {
-        setSizes([]);
-      }
-    };
     fetchSizes();
   }, []);
 
@@ -90,9 +93,19 @@ const SizePage: React.FC = () => {
         )}
       </div>
       {/* Add Size Button */}
-      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6">
+      <button
+        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6"
+        onClick={() => setShowAddSize(true)}
+      >
         + Thêm Kích Thước
       </button>
+      {/* Hiển thị modal thêm size */}
+      {showAddSize && (
+        <AddSize
+          handleClose={() => setShowAddSize(false)}
+          onSuccess={fetchSizes}
+        />
+      )}
       {/* Sizes Table */}
       <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
         <thead className="bg-gray-100">

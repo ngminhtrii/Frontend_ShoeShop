@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
 import { colorApi } from "../../../services/ColorService";
+import AddColor from "./AddColor";
 
 interface Color {
   _id: string;
@@ -15,6 +16,7 @@ interface Color {
 }
 
 const ColorPage: React.FC = () => {
+  const [showAddColor, setShowAddColor] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [colors, setColors] = useState<Color[]>([]);
@@ -89,9 +91,22 @@ const ColorPage: React.FC = () => {
         )}
       </div>
       {/* Add Color Button */}
-      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6">
+      <button
+        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6"
+        onClick={() => setShowAddColor(true)}
+      >
         + Thêm Màu
       </button>
+      {showAddColor && (
+        <AddColor
+          handleClose={() => setShowAddColor(false)}
+          onSuccess={() => {
+            setShowAddColor(false);
+            // reload danh sách màu
+            colorApi.getAll().then((res) => setColors(res.data.data || []));
+          }}
+        />
+      )}
       {/* Colors Table */}
       <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
         <thead className="bg-gray-100">

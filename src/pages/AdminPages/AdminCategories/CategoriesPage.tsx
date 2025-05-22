@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
 import { categoryApi } from "../../../services/CategoryService";
+import AddCategoryPage from "./AddCategories";
 
 // Định nghĩa lại interface cho đúng với dữ liệu backend trả về
 interface Category {
@@ -19,16 +20,18 @@ const ListCategoriesPage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await categoryApi.getAll();
+      setCategories(res.data.data || []);
+    } catch {
+      setCategories([]);
+    }
+  };
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await categoryApi.getAll();
-        setCategories(res.data.data || []);
-      } catch {
-        setCategories([]);
-      }
-    };
     fetchCategories();
   }, []);
 
@@ -93,9 +96,19 @@ const ListCategoriesPage: React.FC = () => {
         )}
       </div>
       {/* Add Category Button */}
-      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6">
+      <button
+        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6"
+        onClick={() => setShowAddCategory(true)}
+      >
         + Thêm Danh Mục
       </button>
+      {/* Hiển thị modal thêm danh mục */}
+      {showAddCategory && (
+        <AddCategoryPage
+          handleClose={() => setShowAddCategory(false)}
+          onSuccess={fetchCategories}
+        />
+      )}
       {/* Categories Table */}
       <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
         <thead className="bg-gray-100">

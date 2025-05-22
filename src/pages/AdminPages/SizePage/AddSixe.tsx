@@ -1,43 +1,27 @@
 import React, { useState } from "react";
-import { categoryApi } from "../../../services/CategoryService";
+import { sizeApi } from "../../../services/Size";
 
-interface AddCategoryProps {
+interface AddSizeProps {
   handleClose: () => void;
   onSuccess?: () => void;
 }
 
-const AddCategoryPage: React.FC<AddCategoryProps> = ({
-  handleClose,
-  onSuccess,
-}) => {
-  const [categoryName, setCategoryName] = useState<string>("");
-  const [categoryDescription, setCategoryDescription] = useState<string>("");
+const AddSize: React.FC<AddSizeProps> = ({ handleClose, onSuccess }) => {
+  const [value, setValue] = useState<number | "">("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleCategoryNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCategoryName(e.target.value);
-  };
-
-  const handleCategoryDescriptionChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    setCategoryDescription(e.target.value);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      await categoryApi.create({
-        name: categoryName,
-        description: categoryDescription,
-      });
+      await sizeApi.create({ value: Number(value), description });
       if (onSuccess) onSuccess();
       handleClose();
     } catch {
-      setError("Thêm danh mục thất bại!");
+      setError("Thêm size thất bại!");
     } finally {
       setLoading(false);
     }
@@ -53,37 +37,33 @@ const AddCategoryPage: React.FC<AddCategoryProps> = ({
         >
           &times;
         </button>
-        <h2 className="text-xl font-bold mb-6 text-center">Thêm Danh Mục</h2>
+        <h2 className="text-xl font-bold mb-6 text-center">Thêm Size</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label
-              htmlFor="categoryName"
-              className="block text-sm font-bold text-gray-600"
-            >
-              Tên Danh Mục
+            <label className="block text-sm font-bold text-gray-600">
+              Giá trị size
             </label>
             <input
-              type="text"
-              id="categoryName"
-              value={categoryName}
-              onChange={handleCategoryNameChange}
-              placeholder="Nhập tên danh mục"
+              type="number"
+              step="0.1"
+              value={value}
+              onChange={(e) =>
+                setValue(e.target.value === "" ? "" : Number(e.target.value))
+              }
+              placeholder="Nhập giá trị size (VD: 41.5)"
               className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
               required
             />
           </div>
           <div className="mb-4">
-            <label
-              htmlFor="categoryDescription"
-              className="block text-sm font-bold text-gray-600"
-            >
+            <label className="block text-sm font-bold text-gray-600">
               Mô tả
             </label>
-            <textarea
-              id="categoryDescription"
-              value={categoryDescription}
-              onChange={handleCategoryDescriptionChange}
-              placeholder="Nhập mô tả danh mục"
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Nhập mô tả"
               className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
               required
             />
@@ -93,9 +73,9 @@ const AddCategoryPage: React.FC<AddCategoryProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-md"
+              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md"
             >
-              {loading ? "Đang thêm..." : "Thêm Danh Mục"}
+              {loading ? "Đang thêm..." : "Thêm Size"}
             </button>
             <button
               type="button"
@@ -111,4 +91,4 @@ const AddCategoryPage: React.FC<AddCategoryProps> = ({
   );
 };
 
-export default AddCategoryPage;
+export default AddSize;

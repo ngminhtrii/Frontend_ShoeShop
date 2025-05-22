@@ -1,4 +1,4 @@
-import { axiosInstance } from "../utils/axiosIntance";
+import { axiosInstance, axiosInstanceAuth } from "../utils/axiosIntance";
 
 export const authenticateApi = {
   login: async (data: { email: string; password: string }) => {
@@ -12,9 +12,15 @@ export const authenticateApi = {
     );
   },
 
-  logout: async () => {
-    return axiosInstance.get(`http://localhost:5005/api/v1/auth/logout`);
+  logout: async (data?: { refreshToken?: string }) => {
+    return axiosInstanceAuth.delete(
+      `http://localhost:5005/api/v1/auth/logout`,
+      {
+        data,
+      }
+    );
   },
+
   verifyOtp: async (data: { email: string; otp: string }) => {
     return axiosInstance.post(
       `http://localhost:5005/api/v1/auth/verify-otp`,

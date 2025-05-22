@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
 import { brandApi } from "../../../services/BrandService";
+import AddBrand from "./AddBrand";
 
 // Định nghĩa lại interface cho đúng với dữ liệu backend trả về
 interface Brand {
@@ -23,16 +24,18 @@ const ListBrandsPage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [showAddBrand, setShowAddBrand] = useState(false);
+
+  const fetchBrands = async () => {
+    try {
+      const res = await brandApi.getAll();
+      setBrands(res.data.data || []);
+    } catch {
+      setBrands([]);
+    }
+  };
 
   useEffect(() => {
-    const fetchBrands = async () => {
-      try {
-        const res = await brandApi.getAll();
-        setBrands(res.data.data || []);
-      } catch {
-        setBrands([]);
-      }
-    };
     fetchBrands();
   }, []);
 
@@ -97,9 +100,18 @@ const ListBrandsPage: React.FC = () => {
         )}
       </div>
       {/* Add Brand Button */}
-      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6">
+      <button
+        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6"
+        onClick={() => setShowAddBrand(true)}
+      >
         + Thêm Thương Hiệu
       </button>
+      {showAddBrand && (
+        <AddBrand
+          handleClose={() => setShowAddBrand(false)}
+          onSuccess={fetchBrands}
+        />
+      )}
       {/* Brands Table */}
       <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
         <thead className="bg-gray-100">

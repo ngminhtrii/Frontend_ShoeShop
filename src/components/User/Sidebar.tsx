@@ -1,9 +1,22 @@
 import React from "react";
-import { FaUser, FaClipboardList } from "react-icons/fa";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { FaUser, FaClipboardList, FaHeart, FaSignOutAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { authenticateApi } from "../../services/AuthenticationService";
+import Cookie from "js-cookie";
 
 const Sidebar: React.FC = () => {
-  const navigate = useNavigate(); // Hook để điều hướng
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await authenticateApi.logout();
+      localStorage.removeItem("accessToken");
+      Cookie.remove("token");
+      navigate("/");
+    } catch {
+      navigate("/");
+    }
+  };
 
   return (
     <div className="w-60 bg-white p-6 shadow-md">
@@ -12,7 +25,7 @@ const Sidebar: React.FC = () => {
           {/* Mục Thông tin tài khoản */}
           <li
             className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-blue-500"
-            onClick={() => navigate("/user-information")} // Điều hướng đến trang User Information
+            onClick={() => navigate("/user-information")}
           >
             <FaUser />
             <span>Thông tin tài khoản</span>
@@ -21,7 +34,7 @@ const Sidebar: React.FC = () => {
           {/* Mục Quản lý đơn hàng */}
           <li
             className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-blue-500"
-            onClick={() => navigate("/user-manage-order")} // Điều hướng đến trang Quản lý đơn hàng
+            onClick={() => navigate("/user-manage-order")}
           >
             <FaClipboardList />
             <span>Quản lý đơn hàng</span>
@@ -30,10 +43,19 @@ const Sidebar: React.FC = () => {
           {/* Mục Sản phẩm yêu thích */}
           <li
             className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-blue-500"
-            onClick={() => navigate("/like-page")} // Điều hướng đến trang Quản lý đơn hàng
+            onClick={() => navigate("/like-page")}
           >
-            <FaClipboardList />
+            <FaHeart />
             <span>Sản phẩm yêu thích</span>
+          </li>
+
+          {/* Mục Đăng xuất */}
+          <li
+            className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-blue-500"
+            onClick={handleLogout}
+          >
+            <FaSignOutAlt />
+            <span>Đăng xuất</span>
           </li>
         </ul>
       </nav>

@@ -1,20 +1,56 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { productApi } from "../../../services/ProductService";
+import { brandApi } from "../../../services/BrandService";
+import { categoryApi } from "../../../services/CategoryService";
 
 interface AddProductProps {
   handleClose: () => void;
 }
 
+interface Brand {
+  _id: string;
+  name: string;
+}
+
+interface Category {
+  _id: string;
+  name: string;
+}
+
 const AddProduct: React.FC<AddProductProps> = ({ handleClose }) => {
   const [formData, setFormData] = useState({
     name: "",
-    slug: "",
     description: "",
     category: "",
     brand: "",
-    price: 0,
-    stockStatus: "in_stock",
-    images: [],
   });
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Lấy danh sách brand
+    const fetchBrands = async () => {
+      try {
+        const res = await brandApi.getAll();
+        setBrands(res.data.data || []);
+      } catch {
+        setBrands([]);
+      }
+    };
+    // Lấy danh sách category
+    const fetchCategories = async () => {
+      try {
+        const res = await categoryApi.getAll();
+        setCategories(res.data.data || []);
+      } catch {
+        setCategories([]);
+      }
+    };
+    fetchBrands();
+    fetchCategories();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -25,11 +61,18 @@ const AddProduct: React.FC<AddProductProps> = ({ handleClose }) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log("Product added:", formData);
-    handleClose();
+    setLoading(true);
+    setError(null);
+    try {
+      await productApi.create(formData);
+      handleClose();
+    } catch (err: any) {
+      setError("Thêm sản phẩm thất bại!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,16 +96,7 @@ const AddProduct: React.FC<AddProductProps> = ({ handleClose }) => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-black">Slug</label>
-            <input
-              type="text"
-              name="slug"
-              value={formData.slug}
-              onChange={handleChange}
+              required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
@@ -74,6 +108,7 @@ const AddProduct: React.FC<AddProductProps> = ({ handleClose }) => {
               name="description"
               value={formData.description}
               onChange={handleChange}
+              required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             ></textarea>
           </div>
@@ -81,68 +116,48 @@ const AddProduct: React.FC<AddProductProps> = ({ handleClose }) => {
             <label className="block text-sm font-medium text-black">
               Danh Mục
             </label>
-            <input
-              type="text"
+            <select
               name="category"
               value={formData.category}
               onChange={handleChange}
+              required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
+            >
+              <option value="">-- Chọn danh mục --</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat._id}>
+                  {cat._id} - {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-black">
               Thương Hiệu
             </label>
-            <input
-              type="text"
+            <select
               name="brand"
               value={formData.brand}
               onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-black">Giá</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-black">
-              Trạng Thái Kho
-            </label>
-            <select
-              name="stockStatus"
-              value={formData.stockStatus}
-              onChange={handleChange}
+              required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             >
-              <option value="in_stock">Còn hàng</option>
-              <option value="low_stock">Sắp hết hàng</option>
-              <option value="out_of_stock">Hết hàng</option>
+              <option value="">-- Chọn thương hiệu --</option>
+              {brands.map((brand) => (
+                <option key={brand._id} value={brand._id}>
+                  {brand._id} - {brand.name}
+                </option>
+              ))}
             </select>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-black">
-              Hình Ảnh
-            </label>
-            <input
-              type="file"
-              name="images"
-              onChange={handleChange}
-              className="mt-1 block w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border file:border-gray-300 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-            />
-          </div>
+          {error && <div className="text-red-500 text-sm">{error}</div>}
           <div className="flex justify-end">
             <button
               type="submit"
+              disabled={loading}
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
             >
-              Thêm
+              {loading ? "Đang thêm..." : "Thêm"}
             </button>
           </div>
         </form>
