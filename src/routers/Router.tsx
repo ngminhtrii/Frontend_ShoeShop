@@ -25,6 +25,7 @@ import DiscountPage from "../pages/AdminPages/DiscountPage/DiscountPage";
 import BrandPage from "../pages/AdminPages/BrandPage/BrandPage";
 import ColorPage from "../pages/AdminPages/ColorPage/ColorPage";
 import SizePage from "../pages/AdminPages/SizePage/SizePage";
+import PaymentStatusPage from "../pages/OrderConfirmationPage/PaymentStatusPage";
 
 const Router = () => {
   return (
@@ -40,6 +41,7 @@ const Router = () => {
       <Route path="/like-page" element={<LikePage />} />
       <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
       <Route path="/product-detail/:id" element={<ProductDetailPage />} />
+      <Route path="/payment/status" element={<PaymentStatusPage />} />
       {/* Các path cần chỉnh layout */}
       {/* Admin */}
       <Route path="/admin/*" element={<AdminLayout />}>

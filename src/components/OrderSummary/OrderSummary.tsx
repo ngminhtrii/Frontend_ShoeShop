@@ -45,12 +45,19 @@ const OrderSummary: React.FC = () => {
     }
     setLoading(true);
     try {
-      await orderApi.createOrder({
+      const res = await orderApi.createOrder({
         addressId,
         paymentMethod,
         note,
         couponCode: discountCode || undefined,
       });
+
+      // Nếu chọn VNPAY và có paymentUrl thì chuyển hướng
+      if (paymentMethod === "VNPAY" && res.data?.data?.paymentUrl) {
+        window.location.href = res.data.data.paymentUrl;
+        return;
+      }
+
       alert("Đặt hàng thành công!");
       // Có thể chuyển hướng sang trang cảm ơn hoặc đơn hàng
     } catch {
