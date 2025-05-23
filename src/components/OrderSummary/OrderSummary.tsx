@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { orderApi } from "../../services/OrderService";
 import { inforApi } from "../../services/InforService";
+import MainNavbar from "../Navbar/MainNavbar"; // Thêm dòng này
 
 interface Address {
   _id: string;
@@ -68,79 +69,82 @@ const OrderSummary: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl w-full p-6 bg-white shadow-lg rounded-lg border">
-      <h2 className="text-2xl font-bold mb-4">Xác nhận đơn hàng</h2>
-      {/* Chọn địa chỉ giao hàng */}
-      <div className="mb-4">
-        <label className="font-semibold">Địa chỉ giao hàng:</label>
-        <select
-          className="w-full border rounded px-3 py-2 mt-1"
-          value={addressId}
-          onChange={(e) => setAddressId(e.target.value)}
-        >
-          {addresses.map((addr) => (
-            <option key={addr._id} value={addr._id}>
-              {addr.fullName} - {addr.phone} | {addr.addressDetail}, {addr.ward}
-              , {addr.district}, {addr.province}
-              {addr.isDefault ? " [Mặc định]" : ""}
-            </option>
-          ))}
-        </select>
-      </div>
-      {/* Chọn phương thức thanh toán */}
-      <div className="mb-4">
-        <label className="font-semibold">Phương thức thanh toán:</label>
-        <div className="flex space-x-4 mt-1">
-          <label>
-            <input
-              type="radio"
-              name="payment"
-              value="COD"
-              checked={paymentMethod === "COD"}
-              onChange={() => setPaymentMethod("COD")}
-            />{" "}
-            Thanh toán khi nhận hàng (COD)
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="payment"
-              value="VNPAY"
-              checked={paymentMethod === "VNPAY"}
-              onChange={() => setPaymentMethod("VNPAY")}
-            />{" "}
-            VNPAY
-          </label>
+    <>
+      <MainNavbar />
+      <div className="max-w-3xl w-full p-6 bg-white shadow-lg rounded-lg border mx-auto mt-8">
+        <h2 className="text-2xl font-bold mb-4">Xác nhận đơn hàng</h2>
+        {/* Chọn địa chỉ giao hàng */}
+        <div className="mb-4">
+          <label className="font-semibold">Địa chỉ giao hàng:</label>
+          <select
+            className="w-full border rounded px-3 py-2 mt-1"
+            value={addressId}
+            onChange={(e) => setAddressId(e.target.value)}
+          >
+            {addresses.map((addr) => (
+              <option key={addr._id} value={addr._id}>
+                {addr.fullName} - {addr.phone} | {addr.addressDetail},{" "}
+                {addr.ward}, {addr.district}, {addr.province}
+                {addr.isDefault ? " [Mặc định]" : ""}
+              </option>
+            ))}
+          </select>
         </div>
+        {/* Chọn phương thức thanh toán */}
+        <div className="mb-4">
+          <label className="font-semibold">Phương thức thanh toán:</label>
+          <div className="flex space-x-4 mt-1">
+            <label>
+              <input
+                type="radio"
+                name="payment"
+                value="COD"
+                checked={paymentMethod === "COD"}
+                onChange={() => setPaymentMethod("COD")}
+              />{" "}
+              Thanh toán khi nhận hàng (COD)
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="payment"
+                value="VNPAY"
+                checked={paymentMethod === "VNPAY"}
+                onChange={() => setPaymentMethod("VNPAY")}
+              />{" "}
+              VNPAY
+            </label>
+          </div>
+        </div>
+        {/* Ghi chú */}
+        <div className="mb-4">
+          <label className="font-semibold">Ghi chú:</label>
+          <textarea
+            className="w-full border rounded px-3 py-2 mt-1"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Ghi chú cho đơn hàng..."
+          />
+        </div>
+        {/* Mã giảm giá */}
+        <div className="mb-4">
+          <label className="font-semibold">Mã giảm giá:</label>
+          <input
+            className="w-full border rounded px-3 py-2 mt-1"
+            value={discountCode}
+            onChange={(e) => setDiscountCode(e.target.value)}
+            placeholder="Nhập mã giảm giá (nếu có)"
+          />
+        </div>
+        <button
+          className="w-full bg-green-500 text-white font-bold py-3 mt-6 text-lg rounded"
+          onClick={handleOrder}
+          disabled={loading}
+        >
+          {loading ? "Đang xử lý..." : "XÁC NHẬN"}
+        </button>
       </div>
-      {/* Ghi chú */}
-      <div className="mb-4">
-        <label className="font-semibold">Ghi chú:</label>
-        <textarea
-          className="w-full border rounded px-3 py-2 mt-1"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Ghi chú cho đơn hàng..."
-        />
-      </div>
-      {/* Mã giảm giá */}
-      <div className="mb-4">
-        <label className="font-semibold">Mã giảm giá:</label>
-        <input
-          className="w-full border rounded px-3 py-2 mt-1"
-          value={discountCode}
-          onChange={(e) => setDiscountCode(e.target.value)}
-          placeholder="Nhập mã giảm giá (nếu có)"
-        />
-      </div>
-      <button
-        className="w-full bg-green-500 text-white font-bold py-3 mt-6 text-lg rounded"
-        onClick={handleOrder}
-        disabled={loading}
-      >
-        {loading ? "Đang xử lý..." : "XÁC NHẬN"}
-      </button>
-    </div>
+    </>
   );
 };
 

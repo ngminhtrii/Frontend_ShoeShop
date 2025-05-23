@@ -48,4 +48,9 @@ export const productApi = {
   // Lay chi tiet san pham theo id
   getProductById: (id: string) =>
     axiosInstanceAuth.get(`http://localhost:5005/api/v1/products/${id}`),
+
+  getRelatedProducts: (productId: string) =>
+    axiosInstanceAuth.get(
+      `http://localhost:5005/api/v1/products/related/${productId}`
+    ),
 };

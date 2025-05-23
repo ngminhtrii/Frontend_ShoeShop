@@ -1,10 +1,11 @@
 import LikeProduct from "../../../components/User/LikeProduct";
 import Sidebar from "../../../components/User/Sidebar";
+import MainNavbar from "../../../components/Navbar/MainNavbar"; // Thêm dòng này
 
 const LikePage = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      {/* <MainNavbar /> */}
+      <MainNavbar /> {/* Thêm dòng này */}
       <div className="flex flex-1">
         {/* Sidebar */}
         <Sidebar />

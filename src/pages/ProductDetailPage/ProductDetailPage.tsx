@@ -9,6 +9,7 @@ const ProductDetailPage: React.FC = () => {
   const [product, setProduct] = useState<any>(null);
   const [attributes, setAttributes] = useState<any>(null);
   const [variants, setVariants] = useState<any>(null);
+  const [similarProducts, setSimilarProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,12 +20,17 @@ const ProductDetailPage: React.FC = () => {
           const res = await productApi.getProductById(id);
           setProduct(res.data.product);
           setAttributes(res.data.attributes);
-          setVariants(res.data.variants); // LẤY variants từ API
+          setVariants(res.data.variants);
+
+          // Lấy sản phẩm liên quan
+          const relatedRes = await productApi.getRelatedProducts(id);
+          setSimilarProducts(relatedRes.data.products || []);
         }
       } catch {
         setProduct(null);
         setAttributes(null);
         setVariants(null);
+        setSimilarProducts([]);
       } finally {
         setLoading(false);
       }
@@ -34,12 +40,6 @@ const ProductDetailPage: React.FC = () => {
 
   if (loading) return <div>Đang tải...</div>;
   if (!product) return <div>Không tìm thấy sản phẩm.</div>;
-  const similarProducts = [
-    { id: 1, name: "Tên sản phẩm", price: "Giá sản phẩm", image: "/sp.png" },
-    { id: 2, name: "Tên sản phẩm", price: "Giá sản phẩm", image: "/sp.png" },
-    { id: 3, name: "Tên sản phẩm", price: "Giá sản phẩm", image: "/sp.png" },
-    { id: 4, name: "Tên sản phẩm", price: "Giá sản phẩm", image: "/sp.png" },
-  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -47,7 +47,7 @@ const ProductDetailPage: React.FC = () => {
       <ProductDetail
         product={product}
         attributes={attributes}
-        variants={variants} // TRUYỀN variants vào
+        variants={variants}
         similarProducts={similarProducts}
       />
     </div>

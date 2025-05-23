@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { cartApi } from "../../services/CartService";
+import { productLikeApi } from "../../services/ProductLikeService";
+import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 
 interface ProductDetailProps {
   product: any;
@@ -19,7 +21,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   const [selectedGender, setSelectedGender] = useState<string | null>(null);
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
+  const [wishlistItemId, setWishlistItemId] = useState<string | null>(null);
   const [loadingAdd, setLoadingAdd] = useState(false);
+
+  // Wishlist state
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
 
   useEffect(() => {
     if (!product?.images?.length) return;
@@ -28,6 +35,28 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     }, 3000);
     return () => clearInterval(interval);
   }, [product.images]);
+
+  // Kiểm tra sản phẩm đã yêu thích chưa
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const res = await productLikeApi.getWishlist();
+        const foundItem = res.data.wishlist.find(
+          (item: any) =>
+            (item.product._id === (product._id || product.id) ||
+              item.product.id === (product._id || product.id)) &&
+            item.variant._id === getVariantId()
+        );
+        setIsLiked(!!foundItem);
+        setWishlistItemId(foundItem ? foundItem._id : null); // Lưu wishlistItemId
+      } catch {
+        setIsLiked(false);
+        setWishlistItemId(null);
+      }
+    };
+    if (product && getVariantId()) fetchWishlist();
+    // eslint-disable-next-line
+  }, [product, selectedGender, selectedColorId]);
 
   if (!product) return <div>Không tìm thấy sản phẩm.</div>;
 
@@ -67,6 +96,86 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     }
   };
 
+  // Xử lý thêm/xóa yêu thích
+  const handleToggleLike = async () => {
+    if (!selectedGender || !selectedColorId) {
+      alert("Vui lòng chọn giới tính và màu sắc trước khi yêu thích!");
+      return;
+    }
+    const variantId = getVariantId();
+    if (!variantId) {
+      alert("Không tìm thấy phiên bản sản phẩm phù hợp!");
+      return;
+    }
+    setLikeLoading(true);
+    try {
+      if (isLiked) {
+        if (!wishlistItemId) {
+          alert("Không tìm thấy wishlistItemId để xóa!");
+          setLikeLoading(false);
+          return;
+        }
+        await productLikeApi.removeFromWishlist(wishlistItemId);
+        setIsLiked(false);
+        setWishlistItemId(null);
+      } else {
+        const res = await productLikeApi.addToWishlist(product.id, variantId);
+        setIsLiked(true);
+        // Nếu backend trả về wishlistItemId mới, bạn có thể set lại ở đây
+        // setWishlistItemId(res.data.wishlistItemId);
+      }
+    } catch {
+      alert("Có lỗi khi thao tác với danh sách yêu thích!");
+    } finally {
+      setLikeLoading(false);
+    }
+  };
+  const renderColors = (variantSummary?: { colors: any[] }) => {
+    if (!variantSummary || !variantSummary.colors) return null;
+    return (
+      <div className="flex justify-center items-center mt-2 gap-2">
+        {variantSummary.colors.map((color, idx) =>
+          color.type === "solid" ? (
+            <div
+              key={idx}
+              className="w-6 h-6 rounded-full border"
+              style={{ backgroundColor: color.code || "#fff" }}
+            ></div>
+          ) : (
+            <div
+              key={idx}
+              className="w-6 h-6 rounded-full border relative overflow-hidden flex-shrink-0"
+              style={{ minWidth: 24, minHeight: 24 }}
+            >
+              <div
+                style={{
+                  backgroundColor: color.colors[0] || "#fff",
+                  width: "100%",
+                  height: "100%",
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  clipPath: "inset(0 50% 0 0)",
+                }}
+              />
+              <div
+                style={{
+                  backgroundColor: color.colors[1] || "#fff",
+                  width: "100%",
+                  height: "100%",
+                  position: "absolute",
+                  right: 0,
+                  top: 0,
+                  clipPath: "inset(0 0 0 50%)",
+                }}
+              />
+            </div>
+          )
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto mt-10">
       <div className="flex items-start space-x-6">
@@ -92,7 +201,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         </div>
 
         <div className="flex-1">
-          <h2 className="text-2xl text-black font-bold">{product.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl text-black font-bold">{product.name}</h2>
+            <button
+              onClick={handleToggleLike}
+              disabled={likeLoading}
+              className="focus:outline-none"
+              title={isLiked ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+            >
+              {isLiked ? (
+                <AiFillHeart className="text-red-500 text-2xl" />
+              ) : (
+                <AiOutlineHeart className="text-gray-400 text-2xl" />
+              )}
+            </button>
+          </div>
           <div className="flex items-center mt-4 space-x-4">
             <span className="text-xl">⭐️ {product.rating || 0}</span>
             <span className="text-gray-600">{product.numReviews} đánh giá</span>
@@ -320,14 +443,23 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         {similarProducts && similarProducts.length > 0 ? (
           <div className="grid grid-cols-4 gap-4 mt-4">
             {similarProducts.map((sp) => (
-              <div key={sp.id} className="border p-4 text-center rounded-lg">
+              <div
+                key={sp.id}
+                className="border p-4 text-center rounded-lg cursor-pointer hover:shadow-lg transition"
+                onClick={() =>
+                  (window.location.href = `/product-detail/${sp.id}`)
+                }
+              >
                 <img
-                  src={sp.image}
+                  src={sp.mainImage || sp.images?.[0]?.url}
                   alt={sp.name}
-                  className="w-full h-24 object-cover rounded"
+                  className="h-20 w-full object-contain rounded mx-auto"
                 />
                 <p className="text-gray-700 mt-2">{sp.name}</p>
-                <p className="text-red-600 font-bold">{sp.price}</p>
+                <p className="text-red-600 font-bold">
+                  {sp.price?.toLocaleString()} đ
+                </p>
+                {renderColors(sp.variantSummary)}
               </div>
             ))}
           </div>
