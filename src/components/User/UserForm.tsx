@@ -24,15 +24,16 @@ interface User {
 const UserForm: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Kiểm tra đăng nhập
     const token = localStorage.getItem("accessToken") || Cookie.get("token");
     if (!token || token === "null" || token === "undefined") {
       navigate("/login");
       return;
     }
-    // Lấy thông tin user
+
     const fetchProfile = async () => {
       try {
         const res = await inforApi.getProfile();
@@ -44,6 +45,30 @@ const UserForm: React.FC = () => {
     fetchProfile();
   }, [navigate]);
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const formData = new FormData();
+      formData.append("avatar", e.target.files[0]);
+      await inforApi.updateAvatar(formData);
+      const res = await inforApi.getProfile();
+      setUser(res.data.user);
+    }
+  };
+
+  const handleUpdateAddress = async (addr: Address) => {
+    await inforApi.updateAddress(addr._id, {
+      fullName: addr.fullName,
+      phone: addr.phone,
+      province: addr.province,
+      district: addr.district,
+      ward: addr.ward,
+      addressDetail: addr.addressDetail,
+      isDefault: addr.isDefault,
+    });
+    const res = await inforApi.getProfile();
+    setUser(res.data.user);
+  };
+
   if (!user) return null;
 
   return (
@@ -51,18 +76,32 @@ const UserForm: React.FC = () => {
       <h2 className="text-2xl font-bold mb-3 text-gray-800">
         Thông tin tài khoản
       </h2>
+
       <div className="flex flex-col items-center mb-4">
-        <img
-          src={
-            user.avatar?.url ||
-            "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.name)
-          }
-          alt="avatar"
-          className="w-24 h-24 rounded-full border mb-2 object-cover"
-        />
+        <div className="relative mb-2 group">
+          <img
+            src={
+              user.avatar?.url ||
+              "https://ui-avatars.com/api/?name=" +
+                encodeURIComponent(user.name)
+            }
+            alt="avatar"
+            className="w-24 h-24 rounded-full border object-cover cursor-pointer group-hover:opacity-80 transition"
+            onClick={() => document.getElementById("avatarInput")?.click()}
+            title="Nhấn để đổi ảnh đại diện"
+          />
+          <input
+            id="avatarInput"
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+        </div>
         <div className="font-semibold text-lg">{user.name}</div>
         <div className="text-gray-500">{user.email}</div>
       </div>
+
       <div>
         <h3 className="font-bold mb-2">Địa chỉ:</h3>
         {user.addresses && user.addresses.length > 0 ? (
@@ -87,6 +126,15 @@ const UserForm: React.FC = () => {
                     [Mặc định]
                   </span>
                 )}
+                <button
+                  className="ml-2 text-blue-500 text-xs"
+                  onClick={() => {
+                    setEditingAddress(addr);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  Sửa
+                </button>
               </li>
             ))}
           </ul>
@@ -94,6 +142,76 @@ const UserForm: React.FC = () => {
           <div className="text-gray-500">Chưa có địa chỉ nào.</div>
         )}
       </div>
+
+      {/* Modal chỉnh sửa địa chỉ */}
+      {isModalOpen && editingAddress && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Chỉnh sửa địa chỉ</h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (editingAddress) {
+                  await handleUpdateAddress(editingAddress);
+                  setIsModalOpen(false);
+                }
+              }}
+              className="space-y-2"
+            >
+              {[
+                "fullName",
+                "phone",
+                "province",
+                "district",
+                "ward",
+                "addressDetail",
+              ].map((field) => (
+                <input
+                  key={field}
+                  type="text"
+                  placeholder={field}
+                  value={(editingAddress as any)[field]}
+                  onChange={(e) =>
+                    setEditingAddress({
+                      ...editingAddress!,
+                      [field]: e.target.value,
+                    })
+                  }
+                  className="w-full border px-2 py-1 rounded"
+                />
+              ))}
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={editingAddress.isDefault}
+                  onChange={(e) =>
+                    setEditingAddress({
+                      ...editingAddress,
+                      isDefault: e.target.checked,
+                    })
+                  }
+                />
+                <span>Đặt làm mặc định</span>
+              </label>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-3 py-1 bg-gray-300 rounded"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-3 py-1 bg-blue-600 text-white rounded"
+                >
+                  Lưu
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
