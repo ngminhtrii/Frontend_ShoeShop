@@ -4,7 +4,7 @@ interface OrderCardProps {
   name: string;
   quantity: number;
   price: number;
-  image?: string; // Thêm dòng này
+  image?: string;
   size?: string | number;
   color?: string;
 }
