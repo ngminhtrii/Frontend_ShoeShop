@@ -47,7 +47,7 @@ const AdminSidebar = () => {
       icon: GrUser,
       subLinks: [
         { name: "All Users", href: "/admin/users" },
-        { name: "Add User", href: "/admin/users/add" },
+        //{ name: "Add User", href: "/admin/users/add" },
       ],
     },
     {
@@ -56,7 +56,7 @@ const AdminSidebar = () => {
       icon: GrCube,
       subLinks: [
         { name: "Products", href: "/admin/products" },
-        { name: "Discount", href: "/admin/products/discount" },
+        { name: "Variants", href: "/admin/products/variants" },
       ],
     },
     { name: "Categories", href: "/admin/categories", icon: GrClipboard },
@@ -64,6 +64,11 @@ const AdminSidebar = () => {
     { name: "Color", href: "/admin/color", icon: FaPalette },
     { name: "Size", href: "/admin/size", icon: FaRulerCombined },
     { name: "Orders", href: "/admin/orders", icon: GrCart },
+    {
+      name: "Discount",
+      href: "/admin/products/discount",
+      icon: FaRulerCombined,
+    },
     { name: "Settings", href: "/admin/settings", icon: GrSettingsOption },
   ];
 

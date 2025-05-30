@@ -26,6 +26,7 @@ import BrandPage from "../pages/AdminPages/BrandPage/BrandPage";
 import ColorPage from "../pages/AdminPages/ColorPage/ColorPage";
 import SizePage from "../pages/AdminPages/SizePage/SizePage";
 import PaymentStatusPage from "../pages/OrderConfirmationPage/PaymentStatusPage";
+import VariantPage from "../pages/AdminPages/VariantPage/VariantPage";
 
 const Router = () => {
   return (
@@ -76,6 +77,7 @@ const Router = () => {
         <Route path="size" element={<SizePage />} />
         {/*<Route path="add-categories" element={<AddCategoryPage/>} />*/}
         <Route path="edit-categories" element={<EditCategoryPage />} />
+        <Route path="products/variants" element={<VariantPage />} />
         <Route path="orders" element={<ListOrderPage />} />
       </Route>
       {/* User */}
