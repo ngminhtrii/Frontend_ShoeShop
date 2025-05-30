@@ -13,11 +13,101 @@ interface Size {
   updatedAt: string;
 }
 
+const EditSizeModal: React.FC<{
+  size: Size;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ size, onClose, onSuccess }) => {
+  const [value, setValue] = useState<number>(size.value);
+  const [description, setDescription] = useState(size.description);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      await sizeApi.update(size._id, { value, description });
+      onSuccess();
+      onClose();
+    } catch {
+      setError("Cập nhật size thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-300 bg-opacity-75 flex justify-center items-center z-50">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md relative text-black">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+        >
+          &times;
+        </button>
+        <h2 className="text-xl font-bold mb-6 text-center">Cập nhật Size</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-gray-600">
+              Giá trị size
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              value={value}
+              onChange={(e) => setValue(Number(e.target.value))}
+              placeholder="Nhập giá trị size (VD: 41.5)"
+              className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-gray-600">
+              Mô tả
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Nhập mô tả"
+              className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
+              required
+            />
+          </div>
+          {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+          <div className="flex justify-end gap-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md"
+            >
+              {loading ? "Đang cập nhật..." : "Cập nhật"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-md"
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const SizePage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sizes, setSizes] = useState<Size[]>([]);
+  const [deletedSizes, setDeletedSizes] = useState<Size[]>([]);
   const [showAddSize, setShowAddSize] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [editingSize, setEditingSize] = useState<Size | null>(null);
 
   const fetchSizes = async () => {
     try {
@@ -28,16 +118,29 @@ const SizePage: React.FC = () => {
     }
   };
 
+  const fetchDeletedSizes = async () => {
+    try {
+      const res = await sizeApi.getDeleted();
+      setDeletedSizes(res.data.data || []);
+    } catch {
+      setDeletedSizes([]);
+    }
+  };
+
   useEffect(() => {
-    fetchSizes();
-  }, []);
+    if (showDeleted) {
+      fetchDeletedSizes();
+    } else {
+      fetchSizes();
+    }
+  }, [showDeleted]);
 
   const handleBack = () => {
     setIsSearchVisible(false);
     setSearchQuery("");
   };
 
-  const filteredSizes = sizes.filter((size) => {
+  const filteredSizes = (showDeleted ? deletedSizes : sizes).filter((size) => {
     return (
       size.value.toString().includes(searchQuery) ||
       size.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -55,7 +158,21 @@ const SizePage: React.FC = () => {
   const handleDeleteSize = async (_id: string) => {
     try {
       await sizeApi.delete(_id);
-      setSizes((prev) => prev.filter((size) => size._id !== _id));
+      if (showDeleted) {
+        fetchDeletedSizes();
+      } else {
+        fetchSizes();
+      }
+    } catch {
+      // Xử lý lỗi nếu cần
+    }
+  };
+
+  const handleRestoreSize = async (_id: string) => {
+    try {
+      await sizeApi.restore(_id);
+      fetchDeletedSizes();
+      fetchSizes();
     } catch {
       // Xử lý lỗi nếu cần
     }
@@ -92,17 +209,45 @@ const SizePage: React.FC = () => {
           </div>
         )}
       </div>
-      {/* Add Size Button */}
-      <button
-        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6"
-        onClick={() => setShowAddSize(true)}
-      >
-        + Thêm Kích Thước
-      </button>
+      {/* Toggle Deleted/Active Sizes */}
+      <div className="flex gap-4 mb-4">
+        <button
+          className={`px-4 py-2 rounded ${
+            !showDeleted ? "bg-blue-600 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => setShowDeleted(false)}
+        >
+          Size đang hoạt động
+        </button>
+        <button
+          className={`px-4 py-2 rounded ${
+            showDeleted ? "bg-red-600 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => setShowDeleted(true)}
+        >
+          Size đã xóa
+        </button>
+        {!showDeleted && (
+          <button
+            className="ml-auto px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
+            onClick={() => setShowAddSize(true)}
+          >
+            + Thêm Kích Thước
+          </button>
+        )}
+      </div>
       {/* Hiển thị modal thêm size */}
       {showAddSize && (
         <AddSize
           handleClose={() => setShowAddSize(false)}
+          onSuccess={fetchSizes}
+        />
+      )}
+      {/* Hiển thị modal sửa size */}
+      {editingSize && (
+        <EditSizeModal
+          size={editingSize}
+          onClose={() => setEditingSize(null)}
           onSuccess={fetchSizes}
         />
       )}
@@ -143,18 +288,30 @@ const SizePage: React.FC = () => {
                   : "Hoạt động"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
-                <button
-                  onClick={() => alert("Edit functionality to be implemented")}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-md mr-2"
-                >
-                  Sửa
-                </button>
-                <button
-                  onClick={() => handleDeleteSize(size._id)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
-                >
-                  Xoá
-                </button>
+                {!showDeleted && (
+                  <>
+                    <button
+                      onClick={() => setEditingSize(size)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-md mr-2"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSize(size._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
+                    >
+                      Xoá
+                    </button>
+                  </>
+                )}
+                {showDeleted && (
+                  <button
+                    onClick={() => handleRestoreSize(size._id)}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded-md"
+                  >
+                    Khôi phục
+                  </button>
+                )}
               </td>
             </tr>
           ))}

@@ -14,7 +14,6 @@ import ListCustomerPage from "../pages/AdminPages/AdminUser/CustomerPage";
 import EditCustomerPage from "../pages/AdminPages/AdminUser/EditUser";
 import ListCategoriesPage from "../pages/AdminPages/AdminCategories/CategoriesPage";
 //import AddCategoryPage from "../pages/AdminPages/AdminCategories/AddCategories";
-import EditCategoryPage from "../pages/AdminPages/AdminCategories/EditCategories";
 import ListOrderPage from "../pages/AdminPages/AdminOrders/OrderPage";
 import CartPage from "../pages/MainPages/CartPage/CartPage";
 import UserInformationPage from "../pages/MainPages/UserPage/UserInformationPage";
@@ -76,7 +75,6 @@ const Router = () => {
         <Route path="color" element={<ColorPage />} />
         <Route path="size" element={<SizePage />} />
         {/*<Route path="add-categories" element={<AddCategoryPage/>} />*/}
-        <Route path="edit-categories" element={<EditCategoryPage />} />
         <Route path="products/variants" element={<VariantPage />} />
         <Route path="orders" element={<ListOrderPage />} />
       </Route>

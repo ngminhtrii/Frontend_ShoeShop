@@ -3,7 +3,6 @@ import { IoIosSearch } from "react-icons/io";
 import { brandApi } from "../../../services/BrandService";
 import AddBrand from "./AddBrand";
 
-// Định nghĩa lại interface cho đúng với dữ liệu backend trả về
 interface Brand {
   _id: string;
   name: string;
@@ -20,11 +19,103 @@ interface Brand {
   updatedAt: string;
 }
 
+const EditBrand: React.FC<{
+  brand: Brand;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ brand, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    name: brand.name,
+    description: brand.description,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      await brandApi.update(brand._id, formData);
+      onSuccess();
+      onClose();
+    } catch {
+      setError("Cập nhật thương hiệu thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-300 bg-opacity-75 flex justify-center items-center z-50">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md relative text-black">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+        >
+          &times;
+        </button>
+        <h2 className="text-xl font-bold mb-6 text-center">
+          Cập nhật Thương Hiệu
+        </h2>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="block text-sm font-medium text-black">
+              Tên Thương Hiệu
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-black">
+              Mô Tả
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+          {error && <div className="text-red-500 text-sm">{error}</div>}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+            >
+              {loading ? "Đang cập nhật..." : "Cập nhật"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const ListBrandsPage: React.FC = () => {
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [deletedBrands, setDeletedBrands] = useState<Brand[]>([]);
   const [showAddBrand, setShowAddBrand] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
 
   const fetchBrands = async () => {
     try {
@@ -35,21 +126,36 @@ const ListBrandsPage: React.FC = () => {
     }
   };
 
+  const fetchDeletedBrands = async () => {
+    try {
+      const res = await brandApi.getDeleted();
+      setDeletedBrands(res.data.data || []);
+    } catch {
+      setDeletedBrands([]);
+    }
+  };
+
   useEffect(() => {
-    fetchBrands();
-  }, []);
+    if (showDeleted) {
+      fetchDeletedBrands();
+    } else {
+      fetchBrands();
+    }
+  }, [showDeleted]);
 
   const handleBack = () => {
     setIsSearchVisible(false);
     setSearchQuery("");
   };
 
-  const filteredBrands = brands.filter((brand) => {
-    return (
-      brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      brand.slug.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  const filteredBrands = (showDeleted ? deletedBrands : brands).filter(
+    (brand) => {
+      return (
+        brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        brand.slug.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+  );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -62,7 +168,30 @@ const ListBrandsPage: React.FC = () => {
   const handleDeleteBrand = async (_id: string) => {
     try {
       await brandApi.delete(_id);
-      setBrands((prev) => prev.filter((brand) => brand._id !== _id));
+      if (showDeleted) {
+        fetchDeletedBrands();
+      } else {
+        fetchBrands();
+      }
+    } catch {
+      // Xử lý lỗi nếu cần
+    }
+  };
+
+  const handleRestoreBrand = async (_id: string) => {
+    try {
+      await brandApi.restore(_id);
+      fetchDeletedBrands();
+      fetchBrands();
+    } catch {
+      // Xử lý lỗi nếu cần
+    }
+  };
+
+  const handleUpdateStatus = async (_id: string, isActive: boolean) => {
+    try {
+      await brandApi.updateStatus(_id, { isActive });
+      fetchBrands();
     } catch {
       // Xử lý lỗi nếu cần
     }
@@ -99,16 +228,45 @@ const ListBrandsPage: React.FC = () => {
           </div>
         )}
       </div>
-      {/* Add Brand Button */}
-      <button
-        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mb-6"
-        onClick={() => setShowAddBrand(true)}
-      >
-        + Thêm Thương Hiệu
-      </button>
+      {/* Toggle Deleted/Active Brands */}
+      <div className="flex gap-4 mb-4">
+        <button
+          className={`px-4 py-2 rounded ${
+            !showDeleted ? "bg-blue-600 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => setShowDeleted(false)}
+        >
+          Thương hiệu đang hoạt động
+        </button>
+        <button
+          className={`px-4 py-2 rounded ${
+            showDeleted ? "bg-red-600 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => setShowDeleted(true)}
+        >
+          Thương hiệu đã xóa
+        </button>
+        {!showDeleted && (
+          <button
+            className="ml-auto px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
+            onClick={() => setShowAddBrand(true)}
+          >
+            + Thêm Thương Hiệu
+          </button>
+        )}
+      </div>
+      {/* Add Brand Modal */}
       {showAddBrand && (
         <AddBrand
           handleClose={() => setShowAddBrand(false)}
+          onSuccess={fetchBrands}
+        />
+      )}
+      {/* Edit Brand Modal */}
+      {editingBrand && (
+        <EditBrand
+          brand={editingBrand}
+          onClose={() => setEditingBrand(null)}
           onSuccess={fetchBrands}
         />
       )}
@@ -161,7 +319,27 @@ const ListBrandsPage: React.FC = () => {
                 )}
               </td>
               <td className="py-2 px-4 border-b text-sm">
-                {brand.isActive ? "Hoạt động" : "Không hoạt động"}
+                {brand.deletedAt ? (
+                  <span className="text-red-500">Đã xóa</span>
+                ) : brand.isActive ? (
+                  <span className="text-green-600">Hoạt động</span>
+                ) : (
+                  <span className="text-yellow-600">Không hoạt động</span>
+                )}
+                {!showDeleted && (
+                  <button
+                    className={`ml-2 px-2 py-1 rounded text-xs ${
+                      brand.isActive
+                        ? "bg-yellow-500 text-white"
+                        : "bg-gray-400 text-white"
+                    }`}
+                    onClick={() =>
+                      handleUpdateStatus(brand._id, !brand.isActive)
+                    }
+                  >
+                    {brand.isActive ? "Tắt hoạt động" : "Kích hoạt"}
+                  </button>
+                )}
               </td>
               <td className="py-2 px-4 border-b text-sm">
                 {brand.deletedAt
@@ -173,18 +351,30 @@ const ListBrandsPage: React.FC = () => {
                   : "Chưa xóa"}
               </td>
               <td className="py-2 px-4 border-b text-sm">
-                <button
-                  onClick={() => alert("Edit functionality to be implemented")}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-md mr-2"
-                >
-                  Sửa
-                </button>
-                <button
-                  onClick={() => handleDeleteBrand(brand._id)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
-                >
-                  Xoá
-                </button>
+                {!showDeleted && (
+                  <>
+                    <button
+                      onClick={() => setEditingBrand(brand)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-md mr-2"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBrand(brand._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
+                    >
+                      Xoá
+                    </button>
+                  </>
+                )}
+                {showDeleted && (
+                  <button
+                    onClick={() => handleRestoreBrand(brand._id)}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded-md"
+                  >
+                    Khôi phục
+                  </button>
+                )}
               </td>
             </tr>
           ))}
