@@ -1,210 +1,414 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { discountApi } from "../../../services/DiscountService";
+import AddDiscount from "./AddDiscount";
 
 interface Discount {
   id: string;
   code: string;
-  name: string;
+  description: string;
+  type: string;
   value: number;
+  maxDiscount?: number;
+  minOrderValue: number;
   startDate: string;
   endDate: string;
-  image: string;
+  maxUses: number;
+  currentUses: number;
+  status: string;
+  isPublic: boolean;
 }
 
-import AddDiscount from "./AddDiscount";
-import EditDiscount from "./EditDiscount";
-import DeleteDiscount from "./DeleteDiscount";
+const initialForm: Omit<Discount, "id" | "currentUses" | "status"> = {
+  code: "",
+  description: "",
+  type: "percent",
+  value: 0,
+  maxDiscount: 0,
+  minOrderValue: 0,
+  startDate: "",
+  endDate: "",
+  maxUses: 1,
+  isPublic: true,
+};
 
 const DiscountPage = () => {
-  const [showAddDiscount, setShowAddDiscount] = useState(false);
-  const [showEditDiscount, setShowEditDiscount] = useState(false);
-  const [showDeleteDiscount, setShowDeleteDiscount] = useState(false);
-  const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(
-    null
-  );
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editDiscount, setEditDiscount] = useState<Discount | null>(null);
+  const [form, setForm] = useState(initialForm);
 
-  const handleAddDiscount = () => {
-    setShowAddDiscount(true);
+  useEffect(() => {
+    fetchDiscounts();
+  }, []);
+
+  const fetchDiscounts = async () => {
+    try {
+      const res = await discountApi.getAllAdminCoupons();
+      const coupons = res.data.coupons || res.data.data || [];
+      setDiscounts(
+        coupons.map((c: any) => ({
+          id: c._id,
+          code: c.code,
+          description: c.description,
+          type: c.type,
+          value: c.value,
+          maxDiscount: c.maxDiscount,
+          minOrderValue: c.minOrderValue,
+          startDate: c.startDate ? c.startDate.slice(0, 10) : "",
+          endDate: c.endDate ? c.endDate.slice(0, 10) : "",
+          maxUses: c.maxUses,
+          currentUses: c.currentUses,
+          status: c.status,
+          isPublic: c.isPublic,
+        }))
+      );
+    } catch {
+      setDiscounts([]);
+    }
   };
 
-  const handleCloseAddDiscount = () => {
-    setShowAddDiscount(false);
-  };
-
+  // Sửa
   const handleEditDiscount = (discount: Discount) => {
-    setSelectedDiscount(discount);
-    setShowEditDiscount(true);
+    setEditDiscount(discount);
+    setForm({
+      code: discount.code,
+      description: discount.description,
+      type: discount.type,
+      value: discount.value,
+      maxDiscount: discount.maxDiscount || 0,
+      minOrderValue: discount.minOrderValue,
+      startDate: discount.startDate,
+      endDate: discount.endDate,
+      maxUses: discount.maxUses,
+      isPublic: discount.isPublic,
+    });
+    setShowEdit(true);
   };
 
-  const handleCloseEditDiscount = () => {
-    setShowEditDiscount(false);
-    setSelectedDiscount(null);
+  const handleUpdateDiscount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editDiscount) return;
+    const data: any = {
+      code: form.code,
+      description: form.description,
+      type: form.type,
+      value: form.value,
+      minOrderValue: form.minOrderValue,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      maxUses: form.maxUses,
+      isPublic: form.isPublic,
+    };
+    if (form.type === "percent") {
+      data.maxDiscount = form.maxDiscount;
+    }
+    try {
+      await discountApi.updateAdminCoupon(editDiscount.id, data);
+      setShowEdit(false);
+      setEditDiscount(null);
+      setForm(initialForm);
+      fetchDiscounts();
+    } catch {
+      alert("Cập nhật coupon thất bại!");
+    }
   };
 
-  const handleDeleteDiscount = (discount: Discount) => {
-    setSelectedDiscount(discount);
-    setShowDeleteDiscount(true);
+  // Xóa
+  const handleDeleteDiscount = async (discount: Discount) => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa coupon này?")) return;
+    try {
+      await discountApi.deleteAdminCoupon(discount.id);
+      fetchDiscounts();
+    } catch {
+      alert("Xóa coupon thất bại!");
+    }
   };
 
-  const handleCloseDeleteDiscount = () => {
-    setShowDeleteDiscount(false);
-    setSelectedDiscount(null);
+  // Đổi trạng thái
+  const handleUpdateStatus = async (discount: Discount, status: string) => {
+    try {
+      await discountApi.updateAdminCouponStatus(discount.id, status);
+      fetchDiscounts();
+    } catch {
+      alert("Cập nhật trạng thái thất bại!");
+    }
   };
 
-  const handleConfirmDeleteDiscount = () => {
-    // Handle delete discount logic here
-    setShowDeleteDiscount(false);
-    setSelectedDiscount(null);
+  // Form change
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      setForm((prev) => ({
+        ...prev,
+        [name]: (e.target as HTMLInputElement).checked,
+      }));
+    } else if (
+      name === "value" ||
+      name === "maxDiscount" ||
+      name === "minOrderValue" ||
+      name === "maxUses"
+    ) {
+      setForm((prev) => ({
+        ...prev,
+        [name]: Number(value),
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Danh Sách Phiếu Giảm Giá</h1>
+        <h2 className="text-xl font-bold">Quản lý Coupon</h2>
         <button
-          onClick={handleAddDiscount}
-          className="bg-white text-black px-4 py-2 rounded-lg border border-gray-600 font-bold hover:bg-gray-200 transition duration-300"
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          onClick={() => {
+            setShowAdd(true);
+            setForm(initialForm);
+          }}
         >
-          + Phiếu Giảm Giá
+          Thêm coupon
         </button>
       </div>
-      {showAddDiscount && <AddDiscount handleClose={handleCloseAddDiscount} />}
-      {showEditDiscount && selectedDiscount && (
-        <EditDiscount
-          handleClose={handleCloseEditDiscount}
-          discount={selectedDiscount}
-        />
-      )}
-      {showDeleteDiscount && selectedDiscount && (
-        <DeleteDiscount
-          handleClose={handleCloseDeleteDiscount}
-          handleDelete={handleConfirmDeleteDiscount}
-        />
-      )}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border">
           <thead>
             <tr>
-              <th className="py-2 px-4 border font-normal">ID</th>
-              <th className="py-2 px-4 border font-normal">Mã Phiếu Giảm</th>
-              <th className="py-2 px-4 border font-normal">Tên Phiếu Giảm</th>
-              <th className="py-2 px-4 border font-normal">Giá Trị</th>
-              <th className="py-2 px-4 border font-normal">Ngày Phát Hành</th>
-              <th className="py-2 px-4 border font-normal">Ngày Kết Thúc</th>
-              <th className="py-2 px-4 border font-normal">Hình Ảnh</th>
-              <th className="py-2 px-4 border font-normal">Thao Tác</th>
+              <th className="py-2 px-4 border text-center">#</th>
+              <th className="py-2 px-4 border text-center">Mã</th>
+              <th className="py-2 px-4 border text-center">Mô tả</th>
+              <th className="py-2 px-4 border text-center">Loại</th>
+              <th className="py-2 px-4 border text-center">Giá trị</th>
+              <th className="py-2 px-4 border text-center">Giảm tối đa</th>
+              <th className="py-2 px-4 border text-center">Đơn tối thiểu</th>
+              <th className="py-2 px-4 border text-center">Ngày bắt đầu</th>
+              <th className="py-2 px-4 border text-center">Ngày kết thúc</th>
+              <th className="py-2 px-4 border text-center">Lượt dùng</th>
+              <th className="py-2 px-4 border text-center">Tối đa</th>
+              <th className="py-2 px-4 border text-center">Trạng thái</th>
+              <th className="py-2 px-4 border text-center">Công khai</th>
+              <th className="py-2 px-4 border text-center">Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="py-2 px-4 border text-center">1</td>
-              <td className="py-2 px-4 border text-center">DC001</td>
-              <td className="py-2 px-4 border text-center">Noel</td>
-              <td className="py-2 px-4 border text-center">30%</td>
-              <td className="py-2 px-4 border text-center">2025-12-20</td>
-              <td className="py-2 px-4 border text-center">2025-12-25</td>
-              <td className="py-2 px-4 border text-center">
-                <div className="flex justify-center items-center">
-                  <img
-                    src="/image/ImgProduct.png"
-                    sizes="(max-width: 640px) 100vw, 640px"
-                    className="w-16 h-16 object-cover"
-                  />
-                </div>
-              </td>
-              <td className="py-2 px-4 border text-center">
-                <div className="flex justify-center gap-6">
+            {discounts.map((discount, idx) => (
+              <tr key={discount.id}>
+                <td className="py-2 px-4 border text-center">{idx + 1}</td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.code}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.description}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.type === "percent" ? "Phần trăm" : "Cố định"}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.type === "percent"
+                    ? `${discount.value}%`
+                    : `${discount.value.toLocaleString()}đ`}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.type === "percent"
+                    ? discount.maxDiscount?.toLocaleString()
+                    : "-"}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.minOrderValue.toLocaleString()}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.startDate}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.endDate}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.currentUses}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.maxUses}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.status === "active" ? (
+                    <span className="text-green-600">Đang hoạt động</span>
+                  ) : (
+                    <span className="text-gray-500">Ngừng</span>
+                  )}
+                  <br />
                   <button
+                    className="text-xs px-2 py-1 rounded bg-yellow-400 hover:bg-yellow-500 text-white mt-1"
                     onClick={() =>
-                      handleEditDiscount({
-                        id: "1",
-                        code: "DC001",
-                        name: "Noel",
-                        value: 30,
-                        startDate: "2025-12-20",
-                        endDate: "2025-12-25",
-                        image: "/image/ImgProduct.png",
-                      })
+                      handleUpdateStatus(
+                        discount,
+                        discount.status === "active" ? "inactive" : "active"
+                      )
                     }
-                    className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition duration-300"
                   >
-                    Sửa
+                    {discount.status === "active" ? "Ngừng" : "Kích hoạt"}
                   </button>
-                  <button
-                    onClick={() =>
-                      handleDeleteDiscount({
-                        id: "1",
-                        code: "DC001",
-                        name: "Noel",
-                        value: 30,
-                        startDate: "2025-12-20",
-                        endDate: "2025-12-25",
-                        image: "/image/ImgProduct.png",
-                      })
-                    }
-                    className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600 transition duration-300"
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td className="py-2 px-4 border text-center">2</td>
-              <td className="py-2 px-4 border text-center">DC002</td>
-              <td className="py-2 px-4 border text-center">Valentine</td>
-              <td className="py-2 px-4 border text-center">50%</td>
-              <td className="py-2 px-4 border text-center">2025-02-09</td>
-              <td className="py-2 px-4 border text-center">2025-02-14</td>
-              <td className="py-2 px-4 border text-center">
-                <div className="flex justify-center items-center">
-                  <img
-                    src="/image/ImgProduct.png"
-                    sizes="(max-width: 640px) 100vw, 640px"
-                    className="w-16 h-16 object-cover"
-                  />
-                </div>
-              </td>
-              <td className="py-2 px-4 border text-center">
-                <div className="flex justify-center gap-6">
-                  <button
-                    onClick={() =>
-                      handleEditDiscount({
-                        id: "2",
-                        code: "DC002",
-                        name: "Valentine",
-                        value: 50,
-                        startDate: "2025-02-09",
-                        endDate: "2025-02-14",
-                        image: "/image/ImgProduct.png",
-                      })
-                    }
-                    className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition duration-300"
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleDeleteDiscount({
-                        id: "2",
-                        code: "DC002",
-                        name: "Valentine",
-                        value: 50,
-                        startDate: "2025-02-09",
-                        endDate: "2025-02-14",
-                        image: "/image/ImgProduct.png",
-                      })
-                    }
-                    className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600 transition duration-300"
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-            {/* Thêm các hàng khác */}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  {discount.isPublic ? "Có" : "Không"}
+                </td>
+                <td className="py-2 px-4 border text-center">
+                  <div className="flex justify-center gap-6">
+                    <button
+                      onClick={() => handleEditDiscount(discount)}
+                      className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition duration-300"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDiscount(discount)}
+                      className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600 transition duration-300"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
+
+      {/* Modal Thêm */}
+      {showAdd && (
+        <AddDiscount
+          handleClose={() => {
+            setShowAdd(false);
+            fetchDiscounts();
+          }}
+        />
+      )}
+
+      {/* Modal Sửa */}
+      {showEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <form
+            className="bg-white p-6 rounded shadow-lg w-96"
+            onSubmit={handleUpdateDiscount}
+          >
+            <h3 className="text-lg font-bold mb-4">Sửa Coupon</h3>
+            <input
+              className="w-full border px-2 py-1 mb-2"
+              name="code"
+              placeholder="Mã coupon"
+              value={form.code}
+              onChange={handleChange}
+              required
+            />
+            <textarea
+              className="w-full border px-2 py-1 mb-2"
+              name="description"
+              placeholder="Mô tả"
+              value={form.description}
+              onChange={handleChange}
+              required
+            />
+            <select
+              className="w-full border px-2 py-1 mb-2"
+              name="type"
+              value={form.type}
+              onChange={handleChange}
+            >
+              <option value="percent">Phần trăm (%)</option>
+              <option value="fixed">Số tiền cố định</option>
+            </select>
+            <input
+              className="w-full border px-2 py-1 mb-2"
+              name="value"
+              type="number"
+              placeholder={
+                form.type === "percent" ? "Giá trị (%)" : "Số tiền giảm"
+              }
+              value={form.value}
+              onChange={handleChange}
+              required
+              min={1}
+            />
+            {form.type === "percent" && (
+              <input
+                className="w-full border px-2 py-1 mb-2"
+                name="maxDiscount"
+                type="number"
+                placeholder="Giảm tối đa (VND)"
+                value={form.maxDiscount}
+                onChange={handleChange}
+                min={0}
+              />
+            )}
+            <input
+              className="w-full border px-2 py-1 mb-2"
+              name="minOrderValue"
+              type="number"
+              placeholder="Đơn tối thiểu (VND)"
+              value={form.minOrderValue}
+              onChange={handleChange}
+              min={0}
+            />
+            <input
+              className="w-full border px-2 py-1 mb-2"
+              name="startDate"
+              type="date"
+              value={form.startDate}
+              onChange={handleChange}
+              required
+            />
+            <input
+              className="w-full border px-2 py-1 mb-2"
+              name="endDate"
+              type="date"
+              value={form.endDate}
+              onChange={handleChange}
+              required
+            />
+            <input
+              className="w-full border px-2 py-1 mb-2"
+              name="maxUses"
+              type="number"
+              placeholder="Số lượt sử dụng tối đa"
+              value={form.maxUses}
+              onChange={handleChange}
+              min={1}
+            />
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                name="isPublic"
+                checked={form.isPublic}
+                onChange={handleChange}
+                className="mr-2"
+              />
+              Công khai
+            </label>
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                type="button"
+                className="px-4 py-2 bg-gray-300 rounded"
+                onClick={() => setShowEdit(false)}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+              >
+                Lưu
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

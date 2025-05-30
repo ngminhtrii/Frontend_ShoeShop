@@ -1,138 +1,192 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { discountApi } from "../../../services/DiscountService";
 
 interface AddDiscountProps {
   handleClose: () => void;
 }
 
+const initialForm = {
+  code: "",
+  description: "",
+  type: "percent",
+  value: 0,
+  maxDiscount: 0,
+  minOrderValue: 0,
+  startDate: "",
+  endDate: "",
+  maxUses: 1,
+  isPublic: true,
+};
+
 const AddDiscount: React.FC<AddDiscountProps> = ({ handleClose }) => {
-  const [formData, setFormData] = useState({
-    code: "",
-    name: "",
-    value: 0,
-    startDate: "",
-    endDate: "",
-    image: "",
-  });
+  const [form, setForm] = useState(initialForm);
 
   const handleChange = (
     e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLInputElement
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      setForm((prev) => ({
+        ...prev,
+        [name]: (e.target as HTMLInputElement).checked,
+      }));
+    } else if (
+      name === "value" ||
+      name === "maxDiscount" ||
+      name === "minOrderValue" ||
+      name === "maxUses"
+    ) {
+      setForm((prev) => ({
+        ...prev,
+        [name]: Number(value),
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle form submission logic here
-    handleClose();
+    const data: any = {
+      code: form.code,
+      description: form.description,
+      type: form.type,
+      value: form.value,
+      minOrderValue: form.minOrderValue,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      maxUses: form.maxUses,
+      isPublic: form.isPublic,
+    };
+    if (form.type === "percent") {
+      data.maxDiscount = form.maxDiscount;
+    }
+    try {
+      await discountApi.createAdminCoupon(data);
+      handleClose();
+    } catch (err) {
+      alert("Thêm phiếu giảm giá thất bại!");
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-300 bg-opacity-75 flex justify-center items-center">
-      <div className="bg-[#f2f2f1] pt-8 pr-16 pb-8 pl-16 rounded-2xl shadow-lg w-auto relative text-black">
-        <button
-          type="button"
-          onClick={handleClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 transition duration-300"
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <form
+        className="bg-white p-6 rounded shadow-lg w-96"
+        onSubmit={handleSubmit}
+      >
+        <h3 className="text-lg font-bold mb-4">Thêm Coupon</h3>
+        <input
+          className="w-full border px-2 py-1 mb-2"
+          name="code"
+          placeholder="Mã coupon"
+          value={form.code}
+          onChange={handleChange}
+          required
+        />
+        <textarea
+          className="w-full border px-2 py-1 mb-2"
+          name="description"
+          placeholder="Mô tả"
+          value={form.description}
+          onChange={handleChange}
+          required
+        />
+        <select
+          className="w-full border px-2 py-1 mb-2"
+          name="type"
+          value={form.type}
+          onChange={handleChange}
         >
-          &times;
-        </button>
-        <h2 className="text-xl font-bold mb-8 text-center">
-          Thêm Phiếu Giảm Giá
-        </h2>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-3 gap-x-36 gap-y-4">
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-black pl-2">
-                Mã Phiếu Giảm
-              </label>
-              <input
-                type="text"
-                name="code"
-                value={formData.code}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-[#f2f2f1] text-black"
-              />
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-black pl-2">
-                Tên Phiếu Giảm
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-[#f2f2f1] text-black"
-              />
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-black pl-2">
-                Giá Trị
-              </label>
-              <input
-                type="number"
-                name="value"
-                value={formData.value}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-[#f2f2f1] text-black"
-              />
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-black pl-2">
-                Ngày Phát Hành
-              </label>
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-[#f2f2f1] text-black"
-              />
-            </div>
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-black pl-2">
-                Ngày Kết Thúc
-              </label>
-              <input
-                type="date"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-[#f2f2f1] text-black"
-              />
-            </div>
-            <div className="col-span-3">
-              <label className="block text-sm font-medium text-black pl-2">
-                Hình Ảnh
-              </label>
-              <div className="mt-1 border border-black p-2 rounded-lg w-36 h-36 flex items-center justify-center bg-[#f2f2f1]">
-                <img
-                  src="/image/ImgProduct.png"
-                  alt="Discount"
-                  className="w-32 h-32 object-cover"
-                />
-              </div>
-              <input
-                type="file"
-                name="image"
-                onChange={handleChange}
-                className="mt-2 block w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border file:border-black file:text-sm file:font-semibold file:bg-[#f2f2f1] file:text-black hover:file:bg-gray-200"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="bg-[#f2f2f1] text-black font-bold px-4 py-2 border border-black rounded-lg hover:bg-gray-200 transition duration-300"
-            >
-              Thêm
-            </button>
-          </div>
-        </form>
-      </div>
+          <option value="percent">Phần trăm (%)</option>
+          <option value="fixed">Số tiền cố định</option>
+        </select>
+        <input
+          className="w-full border px-2 py-1 mb-2"
+          name="value"
+          type="number"
+          placeholder={form.type === "percent" ? "Giá trị (%)" : "Số tiền giảm"}
+          value={form.value}
+          onChange={handleChange}
+          required
+          min={1}
+        />
+        {form.type === "percent" && (
+          <input
+            className="w-full border px-2 py-1 mb-2"
+            name="maxDiscount"
+            type="number"
+            placeholder="Giảm tối đa (VND)"
+            value={form.maxDiscount}
+            onChange={handleChange}
+            min={0}
+          />
+        )}
+        <input
+          className="w-full border px-2 py-1 mb-2"
+          name="minOrderValue"
+          type="number"
+          placeholder="Đơn tối thiểu (VND)"
+          value={form.minOrderValue}
+          onChange={handleChange}
+          min={0}
+        />
+        <input
+          className="w-full border px-2 py-1 mb-2"
+          name="startDate"
+          type="date"
+          value={form.startDate}
+          onChange={handleChange}
+          required
+        />
+        <input
+          className="w-full border px-2 py-1 mb-2"
+          name="endDate"
+          type="date"
+          value={form.endDate}
+          onChange={handleChange}
+          required
+        />
+        <input
+          className="w-full border px-2 py-1 mb-2"
+          name="maxUses"
+          type="number"
+          placeholder="Số lượt sử dụng tối đa"
+          value={form.maxUses}
+          onChange={handleChange}
+          min={1}
+        />
+        <label className="flex items-center mb-2">
+          <input
+            type="checkbox"
+            name="isPublic"
+            checked={form.isPublic}
+            onChange={handleChange}
+            className="mr-2"
+          />
+          Công khai
+        </label>
+        <div className="flex justify-end gap-2 mt-2">
+          <button
+            type="button"
+            className="px-4 py-2 bg-gray-300 rounded"
+            onClick={handleClose}
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-green-500 text-white rounded"
+          >
+            Thêm
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
