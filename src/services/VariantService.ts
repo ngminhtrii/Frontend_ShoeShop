@@ -5,6 +5,12 @@ export const variantApi = {
   getAllVariants: () =>
     axiosInstanceAuth.get("http://localhost:5005/api/v1/admin/variants"),
 
+  // Lấy danh sách variant đã xóa
+  getDeletedVariants: () =>
+    axiosInstanceAuth.get(
+      "http://localhost:5005/api/v1/admin/variants/deleted"
+    ),
+
   // Thêm variant mới
   createVariant: (data: any) =>
     axiosInstanceAuth.post("http://localhost:5005/api/v1/admin/variants", data),
