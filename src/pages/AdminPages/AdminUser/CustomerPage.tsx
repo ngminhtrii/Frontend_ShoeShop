@@ -61,21 +61,17 @@ const ListCustomerPage: React.FC = () => {
     }
   };
 
-  const filteredCustomers = customers.filter((customer) => {
-    return (
+  const filteredCustomers = customers.filter(
+    (customer) =>
       customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  const toggleSearchVisibility = () => {
-    setIsSearchVisible(true);
-  };
-
+  const toggleSearchVisibility = () => setIsSearchVisible(true);
   const handleBack = () => {
     setIsSearchVisible(false);
     setSearchQuery("");
@@ -86,22 +82,45 @@ const ListCustomerPage: React.FC = () => {
 
   const getStatus = (customer: Customer) => {
     if (customer.blockedAt)
-      return <span className="text-red-500">Đã khóa</span>;
+      return (
+        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+          Đã khóa
+        </span>
+      );
     if (!customer.isActive)
-      return <span className="text-gray-500">Ngừng hoạt động</span>;
+      return (
+        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-semibold">
+          Ngừng hoạt động
+        </span>
+      );
     if (!customer.isVerified)
-      return <span className="text-yellow-600">Chưa xác thực</span>;
-    return <span className="text-green-600">Đang hoạt động</span>;
+      return (
+        <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">
+          Chưa xác thực
+        </span>
+      );
+    return (
+      <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+        Đang hoạt động
+      </span>
+    );
   };
 
-  // Đăng xuất tất cả session của user
+  const getRoleBadge = (role: string) => {
+    if (role === "admin")
+      return (
+        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">
+          Admin
+        </span>
+      );
+    return (
+      <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-semibold">
+        User
+      </span>
+    );
+  };
+
   const handleLogoutUser = async (userId: string) => {
-    if (
-      !window.confirm(
-        "Bạn chắc chắn muốn đăng xuất tất cả session của người dùng này?"
-      )
-    )
-      return;
     setLoadingUserId(userId);
     try {
       await sessionUserApi.logoutUser(userId);
@@ -111,15 +130,9 @@ const ListCustomerPage: React.FC = () => {
     }
   };
 
-  // Khóa hoặc mở khóa tài khoản
   const handleBlockUser = async (customer: Customer) => {
     const isBlocked = !!customer.blockedAt;
     let reason = "";
-    if (!isBlocked) {
-      reason =
-        window.prompt("Nhập lý do khóa tài khoản:", "Vi phạm chính sách") ||
-        "Vi phạm chính sách";
-    }
     setLoadingUserId(customer._id);
     try {
       await sessionUserApi.blockUser(customer._id, !isBlocked, reason);
@@ -130,150 +143,145 @@ const ListCustomerPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Danh sách khách hàng</h2>
+    <div className="p-6 w-full ">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-3xl font-bold text-gray-800 tracking-tight leading-snug font-sans">
+          Danh Sách Khách Hàng
+        </h2>
 
-      {!isSearchVisible && (
-        <button
-          onClick={toggleSearchVisibility}
-          className="bg-sky-600/60 text-white px-3 py-2 rounded-md mb-4 hover:bg-sky-600"
-        >
-          <IoIosSearch className="inline-block mr-2" />
-          Tìm kiếm
-        </button>
-      )}
+        {!isSearchVisible ? (
+          <button
+            onClick={toggleSearchVisibility}
+            className="flex items-center gap-2 border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 px-5 py-2 rounded-3xl shadow transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-blue-300 active:bg-gray-200"
+          >
+            <IoIosSearch className="text-xl text-gray-500" />
+            <span className="font-medium">Tìm kiếm</span>
+          </button>
+        ) : (
+          <div className="flex items-center space-x-2 w-full max-w-md">
+            <IoIosSearch
+              onClick={handleBack}
+              className="text-gray-400 cursor-pointer text-xl"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Tìm theo tên hoặc email..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+        )}
+      </div>
 
-      {isSearchVisible && (
-        <div className="mb-4 flex items-center rounded-md">
-          <IoIosSearch
-            onClick={handleBack}
-            className="text-gray-400 cursor-pointer mr-2"
-          />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder="Tìm theo tên hoặc email"
-            className="px-4 py-2 w-1/3 "
-          />
-        </div>
-      )}
-
-      <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              ID
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              Avatar
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              Tên Khách Hàng
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              Email
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              Số Điện Thoại
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              Trạng thái
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              Vai trò
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              Session
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-bold">
-              Thao Tác
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredCustomers.map((customer) => (
-            <tr key={customer._id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{customer._id}</td>
-              <td className="py-2 px-4 border-b text-sm">
-                {customer.avatar?.url ? (
-                  <img
-                    src={customer.avatar.url}
-                    alt={customer.name}
-                    className="h-10 w-10 object-cover rounded-full border"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
-                    <span className="text-lg">?</span>
-                  </div>
-                )}
-              </td>
-              <td className="py-2 px-4 border-b text-sm">{customer.name}</td>
-              <td className="py-2 px-4 border-b text-sm">{customer.email}</td>
-              <td className="py-2 px-4 border-b text-sm">
-                {customer.phone || "-"}
-              </td>
-              <td className="py-2 px-4 border-b text-sm">
-                {getStatus(customer)}
-              </td>
-              <td className="py-2 px-4 border-b text-sm capitalize">
-                {customer.role}
-              </td>
-              <td className="py-2 px-4 border-b text-sm">
-                {sessions
-                  .filter((s) => getSessionUserId(s.user) === customer._id)
-                  .map((s) => (
-                    <div key={s._id} className="mb-1">
-                      <span className="text-xs text-green-700">
-                        {s.device?.browser?.name || "Unknown"} - {s.ip} -{" "}
-                        {new Date(s.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                {sessions.filter(
-                  (s) => getSessionUserId(s.user) === customer._id
-                ).length === 0 && (
-                  <span className="text-xs text-gray-400">
-                    Không có session
-                  </span>
-                )}
-                {/* Nút đăng xuất tất cả session */}
-                {sessions.some(
-                  (s) => getSessionUserId(s.user) === customer._id
-                ) && (
-                  <button
-                    className="mt-1 bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs"
-                    disabled={loadingUserId === customer._id}
-                    onClick={() => handleLogoutUser(customer._id)}
-                  >
-                    {loadingUserId === customer._id
-                      ? "Đang đăng xuất..."
-                      : "Đăng xuất"}
-                  </button>
-                )}
-              </td>
-              <td className="py-2 px-4 border-b text-sm">
-                {/* Nút khóa/mở khóa */}
-                <button
-                  className={`${
-                    customer.blockedAt
-                      ? "bg-green-500 hover:bg-green-600"
-                      : "bg-gray-700 hover:bg-gray-900"
-                  } text-white px-4 py-1 rounded-md`}
-                  disabled={loadingUserId === customer._id}
-                  onClick={() => handleBlockUser(customer)}
-                >
-                  {loadingUserId === customer._id
-                    ? "Đang xử lý..."
-                    : customer.blockedAt
-                    ? "Mở khóa"
-                    : "Khóa"}
-                </button>
-              </td>
+      <div className="overflow-x-auto shadow rounded-lg">
+        <table className="min-w-full bg-white rounded-md overflow-hidden border">
+          <thead className="bg-gray-50 text-gray-700 text-sm font-semibold uppercase">
+            <tr>
+              <th className="py-3 px-4 text-left border-b">ID</th>
+              <th className="py-3 px-4 text-left border-b">Avatar</th>
+              <th className="py-3 px-4 text-left border-b">Tên Khách Hàng</th>
+              <th className="py-3 px-4 text-left border-b">Email</th>
+              <th className="py-3 px-4 text-left border-b">Số ĐT</th>
+              <th className="py-3 px-4 text-left border-b">Trạng thái</th>
+              <th className="py-3 px-4 text-left border-b">Vai trò</th>
+              <th className="py-3 px-4 text-left border-b">Session</th>
+              <th className="py-3 px-4 text-left border-b">Thao Tác</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredCustomers.map((customer) => (
+              <tr key={customer._id} className="hover:bg-gray-50 border-t">
+                <td className="px-4 py-3 text-sm">{customer._id}</td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-center">
+                    {customer.avatar?.url ? (
+                      <img
+                        src={customer.avatar.url}
+                        alt={customer.name}
+                        className="h-10 w-10 rounded-full object-cover border"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 flex items-center justify-center bg-gray-200 rounded-full text-gray-500">
+                        ?
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-sm font-medium text-gray-800">
+                  {customer.name}
+                </td>
+                <td className="px-4 py-3 text-sm">{customer.email}</td>
+                <td className="px-4 py-3 text-sm">{customer.phone || "-"}</td>
+                <td className="px-4 py-3">{getStatus(customer)}</td>
+                <td className="px-4 py-3">{getRoleBadge(customer.role)}</td>
+                <td className="px-4 py-3 text-xs text-gray-600">
+                  {sessions.filter(
+                    (s) => getSessionUserId(s.user) === customer._id
+                  ).length > 0 ? (
+                    <>
+                      {sessions
+                        .filter(
+                          (s) => getSessionUserId(s.user) === customer._id
+                        )
+                        .map((s) => (
+                          <div key={s._id} className="mb-1">
+                            <span className="text-xs">
+                              {s.device?.browser?.name || "Unknown"} - {s.ip}{" "}
+                              <br />
+                              {new Date(s.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">Không có session</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-2 min-w-[120px]">
+                    {sessions.some(
+                      (s) => getSessionUserId(s.user) === customer._id
+                    ) && (
+                      <button
+                        className="inline-flex items-center justify-center bg-blue-400 hover:bg-blue-400 text-white text-xs px-3 py-1 rounded-full shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        disabled={loadingUserId === customer._id}
+                        onClick={() => handleLogoutUser(customer._id)}
+                      >
+                        {loadingUserId === customer._id ? (
+                          <span className="animate-pulse">
+                            Đang đăng xuất...
+                          </span>
+                        ) : (
+                          "Đăng xuất"
+                        )}
+                      </button>
+                    )}
+
+                    <button
+                      className={`inline-flex items-center justify-center text-xs px-3 py-1 rounded-full shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                        customer.blockedAt
+                          ? "bg-green-300 hover:bg-green-300 text-white"
+                          : "bg-gray-400 hover:bg-gray-400 text-white"
+                      }`}
+                      disabled={loadingUserId === customer._id}
+                      onClick={() => handleBlockUser(customer)}
+                    >
+                      {loadingUserId === customer._id ? (
+                        <span className="animate-pulse">Đang xử lý...</span>
+                      ) : customer.blockedAt ? (
+                        "Mở khóa"
+                      ) : (
+                        "Khóa"
+                      )}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
