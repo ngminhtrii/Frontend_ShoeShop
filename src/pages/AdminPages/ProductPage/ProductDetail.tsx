@@ -25,14 +25,20 @@ const ProductDetail = ({ product, handleClose }: ProductDetailProps) => {
           </div>
           <div>
             <strong>Mô tả:</strong> {product.description}
+          </div>{" "}
+          <div>
+            <strong>Danh mục:</strong>{" "}
+            {typeof product.category === "object"
+              ? product.category?.name
+              : product.category}
           </div>
           <div>
-            <strong>Danh mục:</strong> {product.category?.name}
+            <strong>Thương hiệu:</strong>{" "}
+            {typeof product.brand === "object"
+              ? product.brand?.name
+              : product.brand}
           </div>
-          <div>
-            <strong>Thương hiệu:</strong> {product.brand?.name}
-          </div>
-          {product.brand?.logo?.url && (
+          {typeof product.brand === "object" && product.brand?.logo?.url && (
             <div>
               <strong>Logo thương hiệu:</strong>
               <img
@@ -41,18 +47,18 @@ const ProductDetail = ({ product, handleClose }: ProductDetailProps) => {
                 className="inline h-8 ml-2"
               />
             </div>
-          )}
+          )}{" "}
           <div>
             <strong>Hình ảnh:</strong>
             <div className="flex gap-2 mt-1">
-              {product.images.map((img) => (
+              {product.images?.map((img) => (
                 <img
                   key={img.public_id}
                   src={img.url}
                   alt={product.name}
                   className="w-16 h-16 object-cover border"
                 />
-              ))}
+              )) || <span>Không có hình ảnh</span>}
             </div>
           </div>
           <div>
@@ -78,7 +84,7 @@ const ProductDetail = ({ product, handleClose }: ProductDetailProps) => {
             <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
               {JSON.stringify(product.variants, null, 2)}
             </pre>
-          </div>
+          </div>{" "}
           <div>
             <strong>Thông tin khác:</strong>
             <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
@@ -87,7 +93,7 @@ const ProductDetail = ({ product, handleClose }: ProductDetailProps) => {
                   deletedAt: product.deletedAt,
                   deletedBy: product.deletedBy,
                   isActive: product.isActive,
-                  variantSummary: (product as any).variantSummary,
+                  variantSummary: product.variantSummary,
                 },
                 null,
                 2

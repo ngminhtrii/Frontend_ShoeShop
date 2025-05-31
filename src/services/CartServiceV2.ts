@@ -137,13 +137,9 @@ export const cartService = {
   toggleCartItem: (itemId: string): Promise<{ data: CartResponse }> =>
     axiosInstanceAuth.patch(`/api/v1/cart/items/${itemId}/toggle`),
 
-  // Xóa các sản phẩm đã chọn khỏi giỏ hàng
+  // Xóa sản phẩm đã chọn khỏi giỏ hàng
   removeSelectedItems: (): Promise<{ data: CartResponse }> =>
     axiosInstanceAuth.delete("/api/v1/cart/items"),
-
-  // Xóa một sản phẩm khỏi giỏ hàng
-  removeCartItem: (itemId: string): Promise<{ data: CartResponse }> =>
-    axiosInstanceAuth.delete(`/api/v1/cart/items/${itemId}`),
 
   // Xóa toàn bộ giỏ hàng
   clearCart: (): Promise<{ data: CartResponse }> =>

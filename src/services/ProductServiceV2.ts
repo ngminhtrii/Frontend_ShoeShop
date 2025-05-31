@@ -114,6 +114,9 @@ export interface ApiResponse<T = unknown> {
   totalPages?: number;
   hasNextPage?: boolean;
   hasPrevPage?: boolean;
+  // Thêm các thuộc tính có thể có từ backend
+  hasNext?: boolean;
+  hasPrev?: boolean;
 }
 
 export interface ProductInventoryInfo {

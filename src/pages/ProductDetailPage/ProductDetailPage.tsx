@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import NewProductDetail from "../../components/ProductDetail/ProductDetail";
-import ProductCard from "../../components/ProductCard/ProductCard";
 import { Product, productPublicService } from "../../services/ProductServiceV2";
 
 interface ProductAttributes {
@@ -34,8 +33,9 @@ interface ProductVariants {
 interface ProductImages {
   [key: string]: Array<{
     url: string;
+    public_id: string;
     isMain: boolean;
-    alt?: string;
+    displayOrder: number;
   }>;
 }
 
@@ -133,12 +133,110 @@ const ProductDetailPage: React.FC = () => {
     return product.slug || product._id || "";
   };
 
+  // Component hiển thị sản phẩm liên quan
+  const RelatedProducts = () => {
+    if (loading || !similarProducts.length) return null;
+
+    return (
+      <div className="mt-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">
+            Sản phẩm cùng loại
+          </h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+            {similarProducts.slice(0, 10).map((product) => (
+              <div
+                key={product._id}
+                className="group cursor-pointer"
+                onClick={() => {
+                  const identifier = getProductIdentifier(product);
+                  if (identifier) {
+                    navigate(`/product/${identifier}`);
+                  }
+                }}
+              >
+                <div className="aspect-square overflow-hidden rounded-lg bg-gray-100 group-hover:opacity-75 transition-opacity">
+                  <img
+                    src={
+                      product.mainImage ||
+                      product.images?.[0]?.url ||
+                      "/placeholder.jpg"
+                    }
+                    alt={product.name}
+                    className="w-full h-full object-cover object-center"
+                    loading="lazy"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = "/placeholder.jpg";
+                    }}
+                  />
+                </div>
+
+                <div className="mt-3 space-y-1">
+                  <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {product.name}
+                  </h3>
+
+                  <div className="flex items-center space-x-2">
+                    {product.hasDiscount ? (
+                      <>
+                        <span className="text-sm font-semibold text-red-600">
+                          {product.price?.toLocaleString()}đ
+                        </span>
+                        <span className="text-xs text-gray-500 line-through">
+                          {product.originalPrice?.toLocaleString()}đ
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-sm font-semibold text-gray-900">
+                        {product.price?.toLocaleString() ||
+                          product.variantSummary?.priceRange?.min?.toLocaleString() ||
+                          "Liên hệ"}
+                        đ
+                      </span>
+                    )}
+                  </div>
+
+                  {product.rating > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <svg
+                            key={i}
+                            className={`w-3 h-3 ${
+                              i < Math.floor(product.rating)
+                                ? "text-yellow-400"
+                                : "text-gray-200"
+                            }`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        ({product.numReviews})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
             <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
           </div>
         </div>
@@ -146,38 +244,17 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !product) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center max-w-md mx-auto">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-16 w-16 text-red-500 mx-auto mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-xl font-semibold text-gray-800">
-              Không tìm thấy sản phẩm
-            </p>
-            <p className="text-gray-600 mt-2">
-              {error || "Sản phẩm không tồn tại hoặc đã bị xóa."}
-            </p>
-            <button
-              onClick={() => navigate("/products")}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Xem sản phẩm khác
-            </button>
-          </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 text-lg mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Thử lại
+          </button>
         </div>
       </div>
     );
@@ -185,33 +262,17 @@ const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4">
-        <NewProductDetail
-          product={product}
-          attributes={attributes}
-          variants={variants}
-          images={images}
-          similarProducts={similarProducts}
-        />
+      {/* Main product detail */}
+      <NewProductDetail
+        product={product}
+        attributes={attributes}
+        variants={variants}
+        images={images}
+        similarProducts={similarProducts}
+      />
 
-        {/* Sản phẩm liên quan */}
-        {similarProducts && similarProducts.length > 0 && (
-          <section className="py-12 mb-8">
-            <h2 className="text-2xl font-bold mb-6 px-4">Sản phẩm liên quan</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {similarProducts.slice(0, 4).map((product) => (
-                <ProductCard
-                  key={getProductIdentifier(product)}
-                  product={product}
-                  onClick={() =>
-                    navigate(`/product/${getProductIdentifier(product)}`)
-                  }
-                />
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
+      {/* Related products section */}
+      <RelatedProducts />
     </div>
   );
 };

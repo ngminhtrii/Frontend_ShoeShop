@@ -224,16 +224,15 @@ const ProductPage = () => {
           </thead>
           <tbody>
             {products.map((product) => {
-              const {
-                _id,
-                name,
-                category,
-                brand,
-                variantSummary,
-                stockStatus,
-                isActive,
-              } = product;
-              const priceRange = variantSummary?.priceRange;
+              const { _id, name, category, brand, stockStatus, isActive } =
+                product;
+
+              // Sử dụng variantSummary nếu có, nếu không thì fallback về price
+              const priceRange = product.variantSummary?.priceRange || {
+                min: product.price || 0,
+                max: product.price || 0,
+              };
+
               return (
                 <tr key={_id}>
                   <td className="border px-2 py-1">{_id}</td>
@@ -337,78 +336,88 @@ const ProductPage = () => {
             <h2 className="text-xl font-bold mb-8 text-center">Sửa Sản Phẩm</h2>
             <form className="space-y-4" onSubmit={handleEditSubmit}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-black">
-                  Tên Sản Phẩm
+                <label className="block text-sm font-bold text-gray-600">
+                  Tên sản phẩm
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={editForm.name}
                   onChange={handleEditChange}
+                  placeholder="Nhập tên sản phẩm"
+                  className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-black">
-                  Mô Tả
+                <label className="block text-sm font-bold text-gray-600">
+                  Mô tả
                 </label>
                 <textarea
                   name="description"
                   value={editForm.description}
                   onChange={handleEditChange}
+                  placeholder="Nhập mô tả"
+                  className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
+                  rows={3}
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                ></textarea>
+                />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-black">
-                  Danh Mục
+                <label className="block text-sm font-bold text-gray-600">
+                  Danh mục
                 </label>
                 <select
                   name="category"
                   value={editForm.category}
                   onChange={handleEditChange}
+                  className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="">-- Chọn danh mục --</option>
+                  <option value="">Chọn danh mục</option>
                   {categories.map((cat) => (
                     <option key={cat._id} value={cat._id}>
-                      {cat._id} - {cat.name}
+                      {cat.name}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-black">
-                  Thương Hiệu
+                <label className="block text-sm font-bold text-gray-600">
+                  Thương hiệu
                 </label>
                 <select
                   name="brand"
                   value={editForm.brand}
                   onChange={handleEditChange}
+                  className="mt-2 block w-full px-4 py-2 border border-gray-300 rounded-md"
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="">-- Chọn thương hiệu --</option>
+                  <option value="">Chọn thương hiệu</option>
                   {brands.map((brand) => (
                     <option key={brand._id} value={brand._id}>
-                      {brand._id} - {brand.name}
+                      {brand.name}
                     </option>
                   ))}
                 </select>
               </div>
               {editError && (
-                <div className="text-red-500 text-sm">{editError}</div>
+                <div className="text-red-500 text-sm mb-2">{editError}</div>
               )}
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => closeModal("edit")}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-md"
+                >
+                  Hủy
+                </button>
                 <button
                   type="submit"
                   disabled={editLoading}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md"
                 >
-                  {editLoading ? "Đang lưu..." : "Lưu"}
+                  {editLoading ? "Đang cập nhật..." : "Cập nhật"}
                 </button>
               </div>
             </form>
@@ -418,20 +427,22 @@ const ProductPage = () => {
 
       {/* Modal Xóa */}
       {showDelete && selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm relative">
-            <h2 className="text-xl font-bold mb-4">Xóa sản phẩm</h2>
-            <p>Bạn có chắc chắn muốn xóa sản phẩm này?</p>
-            <div className="flex justify-end gap-2 mt-6">
+        <div className="fixed inset-0 bg-gray-300 bg-opacity-75 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-2xl shadow-lg w-auto relative text-black">
+            <h2 className="text-xl font-bold mb-4 text-center">Xác nhận xóa</h2>
+            <p className="text-center mb-6">
+              Bạn có chắc chắn muốn xóa sản phẩm "{selectedProduct.name}"?
+            </p>
+            <div className="flex justify-center gap-4">
               <button
-                className="px-4 py-2 bg-gray-300 rounded"
                 onClick={() => closeModal("delete")}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-md"
               >
                 Hủy
               </button>
               <button
-                className="px-4 py-2 bg-red-500 text-white rounded"
                 onClick={handleDelete}
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-md"
               >
                 Xóa
               </button>
@@ -447,88 +458,6 @@ const ProductPage = () => {
           handleClose={() => closeModal("detail")}
         />
       )}
-<<<<<<< HEAD
-
-      <div className="overflow-x-auto">
-        {loading ? (
-          <div>Đang tải sản phẩm...</div>
-        ) : (
-          <table className="min-w-full bg-white border">
-            <thead>
-              <tr>
-                <th className="py-2 px-4 border">ID</th>
-                <th className="py-2 px-4 border">Tên Sản Phẩm</th>
-                <th className="py-2 px-4 border">Danh Mục</th>
-                <th className="py-2 px-4 border">Thương Hiệu</th>
-                <th className="py-2 px-4 border">Giá</th>
-                <th className="py-2 px-4 border">Trạng Thái</th>
-                <th className="py-2 px-4 border">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => {
-                const { _id, name, category, brand, stockStatus } = product;
-                // const priceRange = variantSummary?.priceRange;
-
-                return (
-                  <tr key={_id}>
-                    <td className="py-2 px-4 border">{_id}</td>
-                    <td className="py-2 px-4 border">{name}</td>
-                    <td className="py-2 px-4 border">
-                      {typeof category === "string" ? category : category?.name}
-                    </td>
-                    <td className="py-2 px-4 border">
-                      {typeof brand === "string" ? brand : brand?.name}
-                    </td>{" "}
-                    <td className="py-2 px-4 border">
-                      {product.variants?.length > 0
-                        ? `${Math.min(
-                            ...product.variants.map((v) => v.price)
-                          ).toLocaleString()} - ${Math.max(
-                            ...product.variants.map((v) => v.price)
-                          ).toLocaleString()} VND`
-                        : "0 VND"}
-                    </td>
-                    <td className="py-2 px-4 border">
-                      {
-                        {
-                          in_stock: "Còn hàng",
-                          low_stock: "Sắp hết hàng",
-                          out_of_stock: "Hết hàng",
-                        }[stockStatus || "out_of_stock"]
-                      }
-                    </td>
-                    <td className="py-2 px-4 border text-center">
-                      <div className="flex justify-center gap-2">
-                        <button
-                          onClick={() => openModal("edit", product)}
-                          className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600"
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          onClick={() => openModal("delete", product)}
-                          className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600"
-                        >
-                          Xóa
-                        </button>
-                        <button
-                          onClick={() => openModal("detail", product)}
-                          className="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-green-600"
-                        >
-                          Chi tiết
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-=======
->>>>>>> 8d628dbe2adae42d631254ebf6026267241ac931
     </div>
   );
 };

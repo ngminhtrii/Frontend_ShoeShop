@@ -60,22 +60,63 @@ export interface Product {
   name: string;
   slug: string;
   description: string;
-  images: {
+  images?: Array<{
     url: string;
     public_id: string;
     isMain: boolean;
-    displayOrder?: number;
-  }[];
-  category: Category;
-  brand: Brand;
-  variants: Variant[];
+    displayOrder: number;
+  }>;
+  category:
+    | {
+        _id: string;
+        name: string;
+      }
+    | string;
+  brand:
+    | {
+        _id: string;
+        name: string;
+        logo?: {
+          url: string;
+          public_id: string;
+        };
+      }
+    | string;
+  variants: string[] | any[];
   totalQuantity: number;
   stockStatus: "in_stock" | "low_stock" | "out_of_stock";
   isActive: boolean;
   rating: number;
   numReviews: number;
+  createdAt: string;
+  updatedAt: string;
   deletedAt?: string | null;
   deletedBy?: string | { _id: string; name?: string } | null;
-  createdAt?: string;
-  updatedAt?: string;
+
+  // Thêm các thuộc tính có thể có từ backend
+  price?: number;
+  originalPrice?: number;
+  discountPercent?: number;
+  hasDiscount?: boolean;
+  maxDiscountPercent?: number;
+  mainImage?: string;
+  totalInventory?: number;
+
+  // Thêm variantSummary
+  variantSummary?: {
+    total: number;
+    active: number;
+    colors: any[];
+    colorCount: number;
+    sizeCount: number;
+    priceRange: {
+      min: number | null;
+      max: number | null;
+      isSinglePrice: boolean;
+    };
+    discount: {
+      hasDiscount: boolean;
+      maxPercent: number;
+    };
+  };
 }

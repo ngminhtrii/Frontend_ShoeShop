@@ -79,11 +79,15 @@ const EditProduct: React.FC<EditProductProps> = ({ handleClose, product }) => {
             <input
               type="text"
               name="category"
-              value={formData.category?.name || ""}
+              value={
+                typeof formData.category === "object"
+                  ? formData.category?.name || ""
+                  : formData.category || ""
+              }
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
-          </div>
+          </div>{" "}
           <div className="mb-4">
             <label className="block text-sm font-medium text-black">
               Thương Hiệu
@@ -91,7 +95,11 @@ const EditProduct: React.FC<EditProductProps> = ({ handleClose, product }) => {
             <input
               type="text"
               name="brand"
-              value={formData.brand?.name || ""}
+              value={
+                typeof formData.brand === "object"
+                  ? formData.brand?.name || ""
+                  : formData.brand || ""
+              }
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />{" "}
