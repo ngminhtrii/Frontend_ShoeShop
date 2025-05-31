@@ -28,7 +28,7 @@ const AdminNavbar = () => {
           alt="avatar"
           className="w-10 h-10 rounded-full border-2 border-white"
         />
-        <p className="text-lg font-semibold">Kolas</p>
+        <p className="text-lg font-semibold">Admin</p>
         <IoIosArrowDown className="text-2xl transition-transform duration-300 hover:rotate-180" />
       </div>
     </div>
