@@ -189,31 +189,38 @@ const ProductPage = () => {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Danh Sách Sản Phẩm</h2>
-      <div className="flex gap-4 mb-4">
+    <div className="p-6 w-full font-sans">
+      <h2 className="text-3xl font-bold text-gray-800 tracking-tight leading-snug mb-6">
+        Danh Sách Sản Phẩm
+      </h2>
+      {/* Tab chuyển đổi */}
+      <div className="flex border-b mb-4">
         <button
-          className={`px-4 py-2 rounded ${
-            !showDeleted ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
           onClick={() => setShowDeleted(false)}
+          className={`px-4 py-2 font-medium transition border-b-2 -mb-px ${
+            !showDeleted
+              ? "text-blue-600 border-blue-600"
+              : "text-gray-500 border-transparent hover:text-blue-600"
+          }`}
         >
-          Sản phẩm đang hoạt động
+          Sản phẩm
         </button>
         <button
-          className={`px-4 py-2 rounded ${
-            showDeleted ? "bg-red-600 text-white" : "bg-gray-200"
-          }`}
           onClick={() => setShowDeleted(true)}
+          className={`px-4 py-2 font-medium transition border-b-2 -mb-px ${
+            showDeleted
+              ? "text-blue-600 border-blue-600"
+              : "text-gray-500 border-transparent hover:text-blue-600"
+          }`}
         >
           Sản phẩm đã xóa
         </button>
         {!showDeleted && (
           <button
-            className="ml-auto px-4 py-2 bg-green-600 text-white rounded"
+            className="ml-auto px-4 py-2 bg-slate-500 text-white rounded-3xl font-medium"
             onClick={() => openModal("add")}
           >
-            Thêm mới
+            Thêm Sản Phẩm
           </button>
         )}
       </div>
@@ -221,115 +228,130 @@ const ProductPage = () => {
       {loading ? (
         <p>Đang tải...</p>
       ) : (
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-2 py-1">ID</th>
-              <th className="border px-2 py-1">Tên Sản Phẩm</th>
-              <th className="border px-2 py-1">Danh Mục</th>
-              <th className="border px-2 py-1">Thương Hiệu</th>
-              <th className="border px-2 py-1">Giá</th>
-              <th className="border px-2 py-1">Active</th>
-              <th className="border px-2 py-1">Tồn Kho</th>
-              <th className="border px-2 py-1">Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => {
-              const { _id, name, category, brand, stockStatus, isActive } =
-                product;
+        <div className="overflow-x-auto shadow rounded-lg">
+          <table className="min-w-full w-full bg-white rounded-md overflow-hidden border font-sans">
+            <thead className="bg-gray-50 text-gray-700 text-sm font-semibold uppercase">
+              <tr>
+                <th className="py-3 px-4 text-left border-b">ID</th>
+                <th className="py-3 px-4 text-left border-b">Tên Sản Phẩm</th>
+                <th className="py-3 px-4 text-left border-b">Danh Mục</th>
+                <th className="py-3 px-4 text-left border-b">Thương Hiệu</th>
+                <th className="py-3 px-4 text-left border-b">Giá</th>
+                <th className="py-3 px-4 text-center border-b">Trạng Thái</th>
+                <th className="py-3 px-4 text-center border-b">Tồn Kho</th>
+                <th className="py-3 px-4 text-center border-b">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => {
+                const { _id, name, category, brand, stockStatus, isActive } =
+                  product;
 
-              // Sử dụng variantSummary nếu có, nếu không thì fallback về price
-              const priceRange = product.variantSummary?.priceRange || {
-                min: product.price || 0,
-                max: product.price || 0,
-              };
+                // Sử dụng variantSummary nếu có, nếu không thì fallback về price
+                const priceRange = product.variantSummary?.priceRange || {
+                  min: product.price || 0,
+                  max: product.price || 0,
+                };
 
-              return (
-                <tr key={_id}>
-                  <td className="border px-2 py-1">{_id}</td>
-                  <td className="border px-2 py-1">{name}</td>
-                  <td className="border px-2 py-1">
-                    {typeof category === "string" ? category : category?.name}
-                  </td>
-                  <td className="border px-2 py-1">
-                    {typeof brand === "string" ? brand : brand?.name}
-                  </td>
-                  <td className="border px-2 py-1">
-                    {priceRange?.min && priceRange?.max
-                      ? `${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()} VND`
-                      : "0 VND"}
-                  </td>
-
-                  <td className="border px-2 py-1 text-center">
-                    {!showDeleted && (
-                      <button
-                        className={`px-2 py-1 rounded text-white ${
-                          isActive
-                            ? "bg-green-500 hover:bg-green-600"
-                            : "bg-gray-400 hover:bg-gray-500"
-                        }`}
-                        onClick={() => openActiveModal(product)}
-                      >
-                        {isActive ? "Đang bán" : "Ẩn"}
-                      </button>
-                    )}
-                  </td>
-                  <td
-                    className={`border px-2 py-1 text-center cursor-pointer select-none ${
-                      !showDeleted ? "hover:bg-yellow-100 transition" : ""
-                    }`}
-                    title={
-                      !showDeleted ? "Nhấn để cập nhật trạng thái tồn kho" : ""
-                    }
-                    onClick={() => {
-                      if (!showDeleted) handleUpdateStockStatus(product);
-                    }}
-                  >
-                    {
+                return (
+                  <tr key={_id} className="hover:bg-gray-50 border-t">
+                    <td className="px-4 py-3 text-sm">{_id}</td>
+                    <td className="px-4 py-3 text-sm">{name}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {typeof category === "string" ? category : category?.name}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {typeof brand === "string" ? brand : brand?.name}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {priceRange?.min && priceRange?.max
+                        ? `${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()} VND`
+                        : "0 VND"}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {!showDeleted && (
+                        <button
+                          type="button"
+                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold focus:outline-none transition ${
+                            isActive
+                              ? "bg-green-100 text-green-700 hover:bg-green-200"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                          onClick={() => openActiveModal(product)}
+                          title="Cập nhật trạng thái"
+                        >
+                          {isActive ? "Đang bán" : "Ẩn"}
+                        </button>
+                      )}
+                    </td>
+                    <td
+                      className="px-4 py-3 text-center select-none cursor-pointer"
+                      title={
+                        !showDeleted
+                          ? "Nhấn để cập nhật trạng thái tồn kho"
+                          : ""
+                      }
+                      onClick={() => {
+                        if (!showDeleted) handleUpdateStockStatus(product);
+                      }}
+                    >
                       {
-                        in_stock: "Còn hàng",
-                        low_stock: "Sắp hết hàng",
-                        out_of_stock: "Hết hàng",
-                      }[stockStatus || "out_of_stock"]
-                    }
-                  </td>
-                  <td className="border px-2 py-1 space-x-2">
-                    {!showDeleted ? (
-                      <>
+                        {
+                          in_stock: (
+                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+                              Còn hàng
+                            </span>
+                          ),
+                          low_stock: (
+                            <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">
+                              Sắp hết hàng
+                            </span>
+                          ),
+                          out_of_stock: (
+                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+                              Hết hàng
+                            </span>
+                          ),
+                        }[stockStatus || "out_of_stock"]
+                      }
+                    </td>
+                    <td className="px-4 py-3 flex gap-2 justify-center">
+                      {!showDeleted ? (
+                        <>
+                          <button
+                            className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
+                            onClick={() => openModal("edit", product)}
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
+                            onClick={() => openModal("delete", product)}
+                          >
+                            Xóa
+                          </button>
+                          <button
+                            className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
+                            onClick={() => openModal("detail", product)}
+                          >
+                            Chi tiết
+                          </button>
+                        </>
+                      ) : (
                         <button
-                          className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
-                          onClick={() => openModal("edit", product)}
+                          className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
+                          onClick={() => handleRestore(product._id)}
                         >
-                          Sửa
+                          Khôi phục
                         </button>
-                        <button
-                          className="px-2 py-1 bg-red-500 text-white rounded text-xs"
-                          onClick={() => openModal("delete", product)}
-                        >
-                          Xóa
-                        </button>
-                        <button
-                          className="px-2 py-1 bg-green-500 text-white rounded text-xs"
-                          onClick={() => openModal("detail", product)}
-                        >
-                          Chi tiết
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="px-2 py-1 bg-green-500 text-white rounded text-xs"
-                        onClick={() => handleRestore(product._id)}
-                      >
-                        Khôi phục
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {showAdd && <AddProduct handleClose={handleAddSuccess} />}
