@@ -11,7 +11,7 @@ export const productApi = {
     axiosInstanceAuth.get(`${API_PREFIX}/deleted`, { params }),
 
   // Lấy chi tiết sản phẩm theo ID
-  getById: (id: string) => axiosInstanceAuth.get(`${API_PREFIX}/${id}`),
+  getDetailById: (id: string) => axiosInstanceAuth.get(`${API_PREFIX}/${id}`),
 
   // Tạo sản phẩm mới
   create: (data: any) => axiosInstanceAuth.post(`${API_PREFIX}`, data),

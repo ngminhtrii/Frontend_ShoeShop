@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { variantApi } from "../../../services/VariantService";
 import VariantForm from "./VariantForm";
+import VariantImagesManager from "./VariantImagesManager";
 
 const VariantPage: React.FC = () => {
   const [variants, setVariants] = useState<any[]>([]);
@@ -9,6 +10,10 @@ const VariantPage: React.FC = () => {
   const [editingVariant, setEditingVariant] = useState<any | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+
+  // State cho quản lý ảnh
+  const [showImageManager, setShowImageManager] = useState<string | null>(null);
+  const [variantImages, setVariantImages] = useState<any[]>([]);
 
   // Lấy danh sách biến thể
   const fetchVariants = async () => {
@@ -82,6 +87,18 @@ const VariantPage: React.FC = () => {
   const handleCloseForm = () => {
     setEditingVariant(null);
     setIsFormOpen(false);
+  };
+
+  // Mở modal quản lý ảnh
+  const handleOpenImageManager = async (variant: any) => {
+    setShowImageManager(variant._id);
+    // Lấy lại ảnh biến thể từ API (nếu cần)
+    if (variant.imagesvariant) {
+      setVariantImages(variant.imagesvariant);
+    } else {
+      const res = await variantApi.getAllVariants();
+      setVariantImages(res.data.variant.imagesvariant || []);
+    }
   };
 
   return (
@@ -209,6 +226,13 @@ const VariantPage: React.FC = () => {
                           Xóa
                         </button>
                       ) : null}
+                      {/* Nút quản lý ảnh */}
+                      <button
+                        className="px-2 py-1 bg-purple-500 text-white rounded text-xs"
+                        onClick={() => handleOpenImageManager(v)}
+                      >
+                        Ảnh
+                      </button>
                     </>
                   )}
                   {showDeleted && (
@@ -224,6 +248,29 @@ const VariantPage: React.FC = () => {
             ))}
           </tbody>
         </table>
+      )}
+      {/* Modal quản lý ảnh variant */}
+      {showImageManager && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-4 w-full max-w-xl relative">
+            <button
+              className="absolute top-2 right-2 text-xl font-bold"
+              onClick={() => setShowImageManager(null)}
+            >
+              ×
+            </button>
+            <VariantImagesManager
+              variantId={showImageManager}
+              images={variantImages}
+              reloadImages={async () => {
+                // Gọi lại API lấy variant theo id
+                const res = await variantApi.getVariantById(showImageManager);
+                setVariantImages(res.data.variant.imagesvariant || []);
+                // Nếu muốn cập nhật lại bảng, gọi fetchVariants();
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
