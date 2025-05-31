@@ -12,7 +12,7 @@ import MainLayout from "./layout/MainLayout";
 import Dashboard from "../pages/AdminPages/DashboardPage/Dashboard";
 
 import ListCustomerPage from "../pages/AdminPages/AdminUser/CustomerPage";
-import EditCustomerPage from "../pages/AdminPages/AdminUser/EditUser";
+
 import ListCategoriesPage from "../pages/AdminPages/AdminCategories/CategoriesPage";
 //import AddCategoryPage from "../pages/AdminPages/AdminCategories/AddCategories";
 import ListOrderPage from "../pages/AdminPages/AdminOrders/OrderPage";
@@ -51,7 +51,6 @@ const Router = () => {
         <Route path="products/discount" element={<DiscountPage />} />
         <Route path="products/variants" element={<VariantPage />} />
         <Route path="users" element={<ListCustomerPage />} />
-        <Route path="edit-user" element={<EditCustomerPage />} />
         <Route path="categories" element={<ListCategoriesPage />} />
         <Route path="brand" element={<BrandPage />} />
         <Route path="color" element={<ColorPage />} />
