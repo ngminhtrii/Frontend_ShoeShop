@@ -39,4 +39,9 @@ export const variantApi = {
       `http://localhost:5005/api/v1/admin/variants/${variantId}/status`,
       { isActive }
     ),
+  // Lấy variant theo ID
+  getVariantById: (variantId: string) =>
+    axiosInstanceAuth.get(
+      `http://localhost:5005/api/v1/admin/variants/${variantId}`
+    ),
 };

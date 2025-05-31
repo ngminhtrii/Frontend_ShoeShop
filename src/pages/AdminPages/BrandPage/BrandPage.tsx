@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
 import { brandApi } from "../../../services/BrandService";
 import AddBrand from "./AddBrand";
+import BrandLogoManager from "./BrandLogoManager";
 
 interface Brand {
   _id: string;
@@ -116,6 +117,7 @@ const ListBrandsPage: React.FC = () => {
   const [showAddBrand, setShowAddBrand] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
+  const [showLogoManager, setShowLogoManager] = useState<Brand | null>(null);
 
   const fetchBrands = async () => {
     try {
@@ -365,6 +367,12 @@ const ListBrandsPage: React.FC = () => {
                     >
                       Xoá
                     </button>
+                    <button
+                      onClick={() => setShowLogoManager(brand)}
+                      className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-1 rounded-md ml-2"
+                    >
+                      Quản lý logo
+                    </button>
                   </>
                 )}
                 {showDeleted && (
@@ -380,6 +388,24 @@ const ListBrandsPage: React.FC = () => {
           ))}
         </tbody>
       </table>
+      {/* Modal quản lý logo */}
+      {showLogoManager && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-4 w-full max-w-md relative">
+            <button
+              className="absolute top-2 right-2 text-xl font-bold"
+              onClick={() => setShowLogoManager(null)}
+            >
+              ×
+            </button>
+            <BrandLogoManager
+              brandId={showLogoManager._id}
+              logo={showLogoManager.logo}
+              reloadBrand={fetchBrands}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

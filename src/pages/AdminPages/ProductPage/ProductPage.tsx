@@ -16,6 +16,13 @@ const ProductPage = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
 
+  // Modal cập nhật trạng thái active
+  const [showActiveModal, setShowActiveModal] = useState(false);
+  const [activeForm, setActiveForm] = useState({
+    isActive: false,
+    cascade: true,
+  });
+
   // State cho form sửa
   const [editForm, setEditForm] = useState({
     name: "",
@@ -26,13 +33,11 @@ const ProductPage = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  // Danh sách brand/category cho modal sửa
   const [brands, setBrands] = useState<{ _id: string; name: string }[]>([]);
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>(
     []
   );
 
-  // Lấy danh sách sản phẩm (hoạt động hoặc đã xóa)
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -49,10 +54,8 @@ const ProductPage = () => {
 
   useEffect(() => {
     fetchProducts();
-    // eslint-disable-next-line
   }, [showDeleted]);
 
-  // Lấy brand/category cho modal sửa
   useEffect(() => {
     if (showEdit) {
       brandApi.getAll().then((res) => setBrands(res.data.data || []));
@@ -60,13 +63,11 @@ const ProductPage = () => {
     }
   }, [showEdit]);
 
-  // Thêm mới
   const handleAddSuccess = () => {
     setShowAdd(false);
     fetchProducts();
   };
 
-  // Sửa
   const openEditModal = (product: Product) => {
     setSelectedProduct(product);
     setEditForm({
@@ -110,11 +111,11 @@ const ProductPage = () => {
     }
   };
 
-  // Xóa mềm
   const openDeleteModal = (product: Product) => {
     setSelectedProduct(product);
     setShowDelete(true);
   };
+
   const handleDelete = async () => {
     if (!selectedProduct) return;
     await productApi.delete(selectedProduct._id);
@@ -122,25 +123,32 @@ const ProductPage = () => {
     fetchProducts();
   };
 
-  // Khôi phục
   const handleRestore = async (id: string) => {
     await productApi.restore(id);
     fetchProducts();
   };
 
-  // Cập nhật trạng thái active
-  const handleUpdateStatus = async (product: Product, isActive: boolean) => {
-    await productApi.updateStatus(product._id, { isActive, cascade: true });
+  // Mở modal cập nhật trạng thái active
+  const openActiveModal = (product: Product) => {
+    setSelectedProduct(product);
+    setActiveForm({ isActive: !product.isActive, cascade: true });
+    setShowActiveModal(true);
+  };
+
+  // Gửi cập nhật trạng thái active
+  const handleActiveSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedProduct) return;
+    await productApi.updateStatus(selectedProduct._id, activeForm);
+    setShowActiveModal(false);
     fetchProducts();
   };
 
-  // Cập nhật trạng thái tồn kho
   const handleUpdateStockStatus = async (product: Product) => {
     await productApi.updateStockStatus(product._id);
     fetchProducts();
   };
 
-  // Modal
   const openModal = (type: string, product?: Product) => {
     if (product) setSelectedProduct(product);
     switch (type) {
@@ -158,6 +166,7 @@ const ProductPage = () => {
         break;
     }
   };
+
   const closeModal = (type: string) => {
     switch (type) {
       case "add":
@@ -171,6 +180,9 @@ const ProductPage = () => {
         break;
       case "detail":
         setShowDetail(false);
+        break;
+      case "active":
+        setShowActiveModal(false);
         break;
     }
     setSelectedProduct(null);
@@ -205,6 +217,7 @@ const ProductPage = () => {
           </button>
         )}
       </div>
+
       {loading ? (
         <p>Đang tải...</p>
       ) : (
@@ -216,7 +229,6 @@ const ProductPage = () => {
               <th className="border px-2 py-1">Danh Mục</th>
               <th className="border px-2 py-1">Thương Hiệu</th>
               <th className="border px-2 py-1">Giá</th>
-              <th className="border px-2 py-1">Trạng Thái</th>
               <th className="border px-2 py-1">Active</th>
               <th className="border px-2 py-1">Tồn Kho</th>
               <th className="border px-2 py-1">Hành động</th>
@@ -248,16 +260,8 @@ const ProductPage = () => {
                       ? `${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()} VND`
                       : "0 VND"}
                   </td>
-                  <td className="border px-2 py-1">
-                    {
-                      {
-                        in_stock: "Còn hàng",
-                        low_stock: "Sắp hết hàng",
-                        out_of_stock: "Hết hàng",
-                      }[stockStatus || "out_of_stock"]
-                    }
-                  </td>
-                  <td className="border px-2 py-1">
+
+                  <td className="border px-2 py-1 text-center">
                     {!showDeleted && (
                       <button
                         className={`px-2 py-1 rounded text-white ${
@@ -265,21 +269,30 @@ const ProductPage = () => {
                             ? "bg-green-500 hover:bg-green-600"
                             : "bg-gray-400 hover:bg-gray-500"
                         }`}
-                        onClick={() => handleUpdateStatus(product, !isActive)}
+                        onClick={() => openActiveModal(product)}
                       >
                         {isActive ? "Đang bán" : "Ẩn"}
                       </button>
                     )}
                   </td>
-                  <td className="border px-2 py-1">
-                    {!showDeleted && (
-                      <button
-                        className="px-2 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600"
-                        onClick={() => handleUpdateStockStatus(product)}
-                      >
-                        Cập nhật
-                      </button>
-                    )}
+                  <td
+                    className={`border px-2 py-1 text-center cursor-pointer select-none ${
+                      !showDeleted ? "hover:bg-yellow-100 transition" : ""
+                    }`}
+                    title={
+                      !showDeleted ? "Nhấn để cập nhật trạng thái tồn kho" : ""
+                    }
+                    onClick={() => {
+                      if (!showDeleted) handleUpdateStockStatus(product);
+                    }}
+                  >
+                    {
+                      {
+                        in_stock: "Còn hàng",
+                        low_stock: "Sắp hết hàng",
+                        out_of_stock: "Hết hàng",
+                      }[stockStatus || "out_of_stock"]
+                    }
                   </td>
                   <td className="border px-2 py-1 space-x-2">
                     {!showDeleted ? (
@@ -319,10 +332,8 @@ const ProductPage = () => {
         </table>
       )}
 
-      {/* Modal Thêm */}
       {showAdd && <AddProduct handleClose={handleAddSuccess} />}
 
-      {/* Modal Sửa */}
       {showEdit && selectedProduct && (
         <div className="fixed inset-0 bg-gray-300 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-2xl shadow-lg w-auto relative text-black">
@@ -425,7 +436,6 @@ const ProductPage = () => {
         </div>
       )}
 
-      {/* Modal Xóa */}
       {showDelete && selectedProduct && (
         <div className="fixed inset-0 bg-gray-300 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-2xl shadow-lg w-auto relative text-black">
@@ -451,7 +461,60 @@ const ProductPage = () => {
         </div>
       )}
 
-      {/* Modal Chi tiết */}
+      {/* Modal cập nhật trạng thái active */}
+      {showActiveModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm relative">
+            <h2 className="text-xl font-bold mb-4">
+              Cập nhật trạng thái sản phẩm
+            </h2>
+            <form onSubmit={handleActiveSubmit}>
+              <div className="mb-4 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={activeForm.isActive}
+                  onChange={(e) =>
+                    setActiveForm((f) => ({ ...f, isActive: e.target.checked }))
+                  }
+                />
+                <label htmlFor="isActive">
+                  {activeForm.isActive
+                    ? "Đang bán (isActive = true)"
+                    : "Ẩn (isActive = false)"}
+                </label>
+              </div>
+              <div className="mb-4 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="cascade"
+                  checked={activeForm.cascade}
+                  onChange={(e) =>
+                    setActiveForm((f) => ({ ...f, cascade: e.target.checked }))
+                  }
+                />
+                <label htmlFor="cascade">Cập nhật cho biến thể (cascade)</label>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-gray-300 rounded"
+                  onClick={() => closeModal("active")}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded"
+                >
+                  Lưu
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showDetail && selectedProduct && (
         <ProductDetail
           product={selectedProduct}
