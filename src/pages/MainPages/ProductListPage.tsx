@@ -174,6 +174,20 @@ const ProductListPage: React.FC = () => {
             priceRange,
           });
           console.log("Loaded filter options:", data.filters);
+
+          // Nếu chưa có giá trị minPrice và maxPrice trong URL, khởi tạo chúng từ API
+          if (filtersState.minPrice === undefined) {
+            setFiltersState((prev) => ({
+              ...prev,
+              minPrice: priceRange?.min || 0,
+            }));
+          }
+          if (filtersState.maxPrice === undefined) {
+            setFiltersState((prev) => ({
+              ...prev,
+              maxPrice: priceRange?.max || 1000000,
+            }));
+          }
         }
       } catch (error) {
         console.error("Error fetching filter options:", error);
@@ -214,6 +228,8 @@ const ProductListPage: React.FC = () => {
       page: 1,
       limit: 12,
       sort: "newest",
+      minPrice: filters.priceRange?.min,
+      maxPrice: filters.priceRange?.max,
     });
     setSearchParams({ sort: "newest" });
   };
@@ -233,12 +249,69 @@ const ProductListPage: React.FC = () => {
     return (
       filtersState.category ||
       filtersState.brand ||
-      filtersState.minPrice ||
-      filtersState.maxPrice ||
+      (filtersState.minPrice !== undefined &&
+        filtersState.minPrice > (filters.priceRange?.min || 0)) ||
+      (filtersState.maxPrice !== undefined &&
+        filtersState.maxPrice < (filters.priceRange?.max || 1000000)) ||
       filtersState.gender ||
       filtersState.colors ||
       filtersState.sizes
     );
+  };
+
+  // Xử lý khi nhập giá trực tiếp
+  const handlePriceInput = (type: "min" | "max", value: string) => {
+    const numValue = value === "" ? undefined : Number(value);
+
+    // Nếu là giá không hợp lệ, không cập nhật
+    if (numValue !== undefined && isNaN(numValue)) {
+      return;
+    }
+
+    // Kiểm tra giới hạn
+    if (type === "min") {
+      if (numValue !== undefined) {
+        // Đảm bảo giá min không vượt quá giá max
+        if (
+          filtersState.maxPrice !== undefined &&
+          numValue > filtersState.maxPrice
+        ) {
+          return;
+        }
+        // Đảm bảo giá min không nhỏ hơn giá min cho phép
+        if (
+          filters.priceRange?.min !== undefined &&
+          numValue < filters.priceRange.min
+        ) {
+          return;
+        }
+      }
+      setFiltersState({
+        ...filtersState,
+        minPrice: numValue,
+      });
+    } else {
+      if (numValue !== undefined) {
+        // Đảm bảo giá max không nhỏ hơn giá min
+        if (
+          filtersState.minPrice !== undefined &&
+          numValue < filtersState.minPrice
+        ) {
+          return;
+        }
+        // Đảm bảo giá max không vượt quá giá max cho phép
+        if (
+          filters.priceRange?.max !== undefined &&
+          numValue > filters.priceRange.max
+        ) {
+          return;
+        }
+      }
+      setFiltersState({
+        ...filtersState,
+        maxPrice: numValue,
+      });
+    }
   };
 
   // Generate pagination buttons
@@ -423,40 +496,171 @@ const ProductListPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Price filter */}
-              <div className="space-y-2">
+              {/* Price filter with slider */}
+              <div className="space-y-6">
                 <h3 className="font-medium text-gray-700">Khoảng giá</h3>
-                <div className="flex gap-2 items-center">
+
+                {/* Thanh trượt khoảng giá - Thêm mb-8 để tăng khoảng cách */}
+                <div className="px-2 mb-8">
+                  <div className="relative">
+                    {/* Track cho thanh trượt */}
+                    <div className="absolute h-1 bg-gray-200 rounded w-full top-1/2 -translate-y-1/2"></div>
+
+                    {/* Track đã chọn */}
+                    <div
+                      className="absolute h-1 bg-blue-500 rounded top-1/2 -translate-y-1/2"
+                      style={{
+                        left: `${
+                          (((filtersState.minPrice ||
+                            filters.priceRange?.min ||
+                            0) -
+                            (filters.priceRange?.min || 0)) /
+                            ((filters.priceRange?.max || 1000000) -
+                              (filters.priceRange?.min || 0))) *
+                          100
+                        }%`,
+                        right: `${
+                          100 -
+                          (((filtersState.maxPrice ||
+                            filters.priceRange?.max ||
+                            1000000) -
+                            (filters.priceRange?.min || 0)) /
+                            ((filters.priceRange?.max || 1000000) -
+                              (filters.priceRange?.min || 0))) *
+                            100
+                        }%`,
+                      }}
+                    ></div>
+
+                    {/* Thanh trượt giá thấp nhất */}
+                    <input
+                      type="range"
+                      min={filters.priceRange?.min || 0}
+                      max={filters.priceRange?.max || 1000000}
+                      value={
+                        filtersState.minPrice || filters.priceRange?.min || 0
+                      }
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        // Đảm bảo minPrice không vượt quá maxPrice
+                        if (
+                          value <=
+                          (filtersState.maxPrice ||
+                            filters.priceRange?.max ||
+                            1000000)
+                        ) {
+                          setFiltersState({
+                            ...filtersState,
+                            minPrice: value,
+                          });
+                        }
+                      }}
+                      className="absolute w-full appearance-none bg-transparent pointer-events-auto cursor-pointer h-1"
+                      style={{
+                        WebkitAppearance: "none",
+                        appearance: "none",
+                        backgroundColor: "transparent",
+                      }}
+                    />
+
+                    {/* Thanh trượt giá cao nhất */}
+                    <input
+                      type="range"
+                      min={filters.priceRange?.min || 0}
+                      max={filters.priceRange?.max || 1000000}
+                      value={
+                        filtersState.maxPrice ||
+                        filters.priceRange?.max ||
+                        1000000
+                      }
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        // Đảm bảo maxPrice không nhỏ hơn minPrice
+                        if (
+                          value >=
+                          (filtersState.minPrice ||
+                            filters.priceRange?.min ||
+                            0)
+                        ) {
+                          setFiltersState({
+                            ...filtersState,
+                            maxPrice: value,
+                          });
+                        }
+                      }}
+                      className="absolute w-full appearance-none bg-transparent pointer-events-auto cursor-pointer h-1"
+                      style={{
+                        WebkitAppearance: "none",
+                        appearance: "none",
+                        backgroundColor: "transparent",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Hiển thị khoảng giá đã chọn với input number */}
+                <div className="flex items-center justify-between text-sm">
                   <input
                     type="number"
-                    placeholder="Từ"
-                    value={filtersState.minPrice || ""}
-                    onChange={(e) =>
-                      setFiltersState({
-                        ...filtersState,
-                        minPrice: e.target.value
-                          ? Number(e.target.value)
-                          : undefined,
-                      })
+                    className="border rounded-md px-3 py-2 bg-white w-[45%] text-sm"
+                    min={filters.priceRange?.min || 0}
+                    max={
+                      filtersState.maxPrice ||
+                      filters.priceRange?.max ||
+                      1000000
                     }
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    value={
+                      filtersState.minPrice !== undefined
+                        ? filtersState.minPrice
+                        : ""
+                    }
+                    onChange={(e) => handlePriceInput("min", e.target.value)}
+                    placeholder={`${filters.priceRange?.min || 0}`}
                   />
-                  <span>-</span>
+                  <span className="text-gray-500">đến</span>
                   <input
                     type="number"
-                    placeholder="Đến"
-                    value={filtersState.maxPrice || ""}
-                    onChange={(e) =>
-                      setFiltersState({
-                        ...filtersState,
-                        maxPrice: e.target.value
-                          ? Number(e.target.value)
-                          : undefined,
-                      })
+                    className="border rounded-md px-3 py-2 bg-white w-[45%] text-sm"
+                    min={filtersState.minPrice || filters.priceRange?.min || 0}
+                    max={filters.priceRange?.max || 1000000}
+                    value={
+                      filtersState.maxPrice !== undefined
+                        ? filtersState.maxPrice
+                        : ""
                     }
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    onChange={(e) => handlePriceInput("max", e.target.value)}
+                    placeholder={`${filters.priceRange?.max || 1000000}`}
                   />
                 </div>
+
+                {/* CSS để tùy chỉnh thumb của thanh trượt */}
+                <style>{`
+                  input[type="range"]::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: white;
+                    border: 2px solid #3b82f6;
+                    cursor: pointer;
+                    pointer-events: auto;
+                    z-index: 10;
+                    position: relative;
+                  }
+
+                  input[type="range"]::-moz-range-thumb {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: white;
+                    border: 2px solid #3b82f6;
+                    cursor: pointer;
+                    pointer-events: auto;
+                    z-index: 10;
+                    position: relative;
+                  }
+                `}</style>
               </div>
 
               {/* Category filter */}
@@ -520,13 +724,16 @@ const ProductListPage: React.FC = () => {
 
               {/* Color filter */}
               <div className="space-y-2">
-                <h3 className="font-medium text-gray-700">Màu sắc</h3>                <div className="flex flex-wrap gap-2">
+                <h3 className="font-medium text-gray-700">Màu sắc</h3>{" "}
+                <div className="flex flex-wrap gap-2">
                   {filters.colors.map((color) => (
                     <button
                       key={color._id}
                       onClick={() => handleCheckboxFilter("colors", color._id)}
                       className={`relative w-8 h-8 rounded-full flex items-center justify-center ${
-                        safeStringToArray(filtersState.colors).includes(color._id)
+                        safeStringToArray(filtersState.colors).includes(
+                          color._id
+                        )
                           ? "ring-2 ring-blue-500 ring-offset-2"
                           : ""
                       }`}
@@ -570,18 +777,30 @@ const ProductListPage: React.FC = () => {
 
               {/* Size filter */}
               <div className="space-y-2">
-                <h3 className="font-medium text-gray-700">Kích thước</h3>                <div className="flex flex-wrap gap-2">
+                <h3 className="font-medium text-gray-700">Kích thước</h3>
+                <div className="flex flex-wrap gap-2">
                   {filters.sizes.map((size) => (
                     <button
                       key={size._id}
                       onClick={() => handleCheckboxFilter("sizes", size._id)}
-                      className={`w-10 h-10 flex items-center justify-center border rounded-md ${
+                      className={`relative w-10 h-10 flex items-center justify-center border rounded-md ${
                         safeStringToArray(filtersState.sizes).includes(size._id)
                           ? "bg-blue-50 border-blue-500 text-blue-700"
                           : "border-gray-300"
-                      }`}
+                      } group`}
+                      title={size.description || `Size ${size.value}`}
                     >
-                      {size.value}
+                      {/* Hiển thị tooltip mặc định của trình duyệt */}
+                      <span>{size.value}</span>
+
+                      {/* Tooltip hiển thị description */}
+                      {size.description && (
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-max z-10 pointer-events-none">
+                          {size.description}
+                          {/* Mũi tên nhỏ phía dưới tooltip */}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -674,38 +893,148 @@ const ProductListPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Price filter */}
-                  <div className="space-y-2">
+                  {/* Price filter with slider - Mobile */}
+                  <div className="space-y-6">
                     <h3 className="font-medium text-gray-700">Khoảng giá</h3>
-                    <div className="flex gap-2 items-center">
+
+                    {/* Thanh trượt khoảng giá - Thêm mb-8 để tăng khoảng cách */}
+                    <div className="px-2 mb-8">
+                      <div className="relative">
+                        {/* Track cho thanh trượt */}
+                        <div className="absolute h-1 bg-gray-200 rounded w-full top-1/2 -translate-y-1/2"></div>
+
+                        {/* Track đã chọn */}
+                        <div
+                          className="absolute h-1 bg-blue-500 rounded top-1/2 -translate-y-1/2"
+                          style={{
+                            left: `${
+                              (((filtersState.minPrice ||
+                                filters.priceRange?.min ||
+                                0) -
+                                (filters.priceRange?.min || 0)) /
+                                ((filters.priceRange?.max || 1000000) -
+                                  (filters.priceRange?.min || 0))) *
+                              100
+                            }%`,
+                            right: `${
+                              100 -
+                              (((filtersState.maxPrice ||
+                                filters.priceRange?.max ||
+                                1000000) -
+                                (filters.priceRange?.min || 0)) /
+                                ((filters.priceRange?.max || 1000000) -
+                                  (filters.priceRange?.min || 0))) *
+                                100
+                            }%`,
+                          }}
+                        ></div>
+
+                        {/* Thanh trượt giá thấp nhất */}
+                        <input
+                          type="range"
+                          min={filters.priceRange?.min || 0}
+                          max={filters.priceRange?.max || 1000000}
+                          value={
+                            filtersState.minPrice ||
+                            filters.priceRange?.min ||
+                            0
+                          }
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            // Đảm bảo minPrice không vượt quá maxPrice
+                            if (
+                              value <=
+                              (filtersState.maxPrice ||
+                                filters.priceRange?.max ||
+                                1000000)
+                            ) {
+                              setFiltersState({
+                                ...filtersState,
+                                minPrice: value,
+                              });
+                            }
+                          }}
+                          className="absolute w-full appearance-none bg-transparent pointer-events-auto cursor-pointer h-1"
+                          style={{
+                            WebkitAppearance: "none",
+                            appearance: "none",
+                            backgroundColor: "transparent",
+                          }}
+                        />
+
+                        {/* Thanh trượt giá cao nhất */}
+                        <input
+                          type="range"
+                          min={filters.priceRange?.min || 0}
+                          max={filters.priceRange?.max || 1000000}
+                          value={
+                            filtersState.maxPrice ||
+                            filters.priceRange?.max ||
+                            1000000
+                          }
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            // Đảm bảo maxPrice không nhỏ hơn minPrice
+                            if (
+                              value >=
+                              (filtersState.minPrice ||
+                                filters.priceRange?.min ||
+                                0)
+                            ) {
+                              setFiltersState({
+                                ...filtersState,
+                                maxPrice: value,
+                              });
+                            }
+                          }}
+                          className="absolute w-full appearance-none bg-transparent pointer-events-auto cursor-pointer h-1"
+                          style={{
+                            WebkitAppearance: "none",
+                            appearance: "none",
+                            backgroundColor: "transparent",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Hiển thị khoảng giá đã chọn với input number */}
+                    <div className="flex items-center justify-between text-sm">
                       <input
                         type="number"
-                        placeholder="Từ"
-                        value={filtersState.minPrice || ""}
-                        onChange={(e) =>
-                          setFiltersState({
-                            ...filtersState,
-                            minPrice: e.target.value
-                              ? Number(e.target.value)
-                              : undefined,
-                          })
+                        className="border rounded-md px-3 py-2 bg-white w-[45%] text-sm"
+                        min={filters.priceRange?.min || 0}
+                        max={
+                          filtersState.maxPrice ||
+                          filters.priceRange?.max ||
+                          1000000
                         }
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={
+                          filtersState.minPrice !== undefined
+                            ? filtersState.minPrice
+                            : ""
+                        }
+                        onChange={(e) =>
+                          handlePriceInput("min", e.target.value)
+                        }
+                        placeholder={`${filters.priceRange?.min || 0}`}
                       />
-                      <span>-</span>
+                      <span className="text-gray-500">đến</span>
                       <input
                         type="number"
-                        placeholder="Đến"
-                        value={filtersState.maxPrice || ""}
-                        onChange={(e) =>
-                          setFiltersState({
-                            ...filtersState,
-                            maxPrice: e.target.value
-                              ? Number(e.target.value)
-                              : undefined,
-                          })
+                        className="border rounded-md px-3 py-2 bg-white w-[45%] text-sm"
+                        min={
+                          filtersState.minPrice || filters.priceRange?.min || 0
                         }
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        max={filters.priceRange?.max || 1000000}
+                        value={
+                          filtersState.maxPrice !== undefined
+                            ? filtersState.maxPrice
+                            : ""
+                        }
+                        onChange={(e) =>
+                          handlePriceInput("max", e.target.value)
+                        }
+                        placeholder={`${filters.priceRange?.max || 1000000}`}
                       />
                     </div>
                   </div>
@@ -772,7 +1101,8 @@ const ProductListPage: React.FC = () => {
 
                   {/* Color filter */}
                   <div className="space-y-2">
-                    <h3 className="font-medium text-gray-700">Màu sắc</h3>                    <div className="flex flex-wrap gap-2">
+                    <h3 className="font-medium text-gray-700">Màu sắc</h3>{" "}
+                    <div className="flex flex-wrap gap-2">
                       {filters.colors.map((color) => (
                         <button
                           key={color._id}
@@ -780,7 +1110,9 @@ const ProductListPage: React.FC = () => {
                             handleCheckboxFilter("colors", color._id)
                           }
                           className={`relative w-8 h-8 rounded-full flex items-center justify-center ${
-                            safeStringToArray(filtersState.colors).includes(color._id)
+                            safeStringToArray(filtersState.colors).includes(
+                              color._id
+                            )
                               ? "ring-2 ring-blue-500 ring-offset-2"
                               : ""
                           }`}
@@ -824,7 +1156,8 @@ const ProductListPage: React.FC = () => {
 
                   {/* Size filter */}
                   <div className="space-y-2">
-                    <h3 className="font-medium text-gray-700">Kích thước</h3>                    <div className="flex flex-wrap gap-2">
+                    <h3 className="font-medium text-gray-700">Kích thước</h3>{" "}
+                    <div className="flex flex-wrap gap-2">
                       {filters.sizes.map((size) => (
                         <button
                           key={size._id}
@@ -832,7 +1165,9 @@ const ProductListPage: React.FC = () => {
                             handleCheckboxFilter("sizes", size._id)
                           }
                           className={`w-10 h-10 flex items-center justify-center border rounded-md ${
-                            safeStringToArray(filtersState.sizes).includes(size._id)
+                            safeStringToArray(filtersState.sizes).includes(
+                              size._id
+                            )
                               ? "bg-blue-50 border-blue-500 text-blue-700"
                               : "border-gray-300"
                           }`}
