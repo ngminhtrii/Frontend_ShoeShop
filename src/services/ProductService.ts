@@ -28,7 +28,10 @@ export const productApi = {
 
   // Cập nhật trạng thái active của sản phẩm
   updateStatus: (id: string, data: { isActive: boolean; cascade?: boolean }) =>
-    axiosInstanceAuth.patch(`${API_PREFIX}/${id}/status`, data),
+    axiosInstanceAuth.patch(
+      `http://localhost:5005/api/v1/admin/products/${id}/status`,
+      data
+    ),
 
   // Cập nhật trạng thái tồn kho sản phẩm
   updateStockStatus: (id: string) =>
