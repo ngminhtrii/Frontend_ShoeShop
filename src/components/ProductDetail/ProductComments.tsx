@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { reviewApi, Review } from "../../services/ReviewServiceV2";
-import { FaHeart, FaRegHeart, FaStar, FaRegStar } from "react-icons/fa";
+import { FaHeart, FaRegHeart, FaStar, FaRegStar, FaUser } from "react-icons/fa";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -40,21 +40,22 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
       return;
     }
 
-    setLikeLoading(prev => ({ ...prev, [reviewId]: true }));
+    setLikeLoading((prev) => ({ ...prev, [reviewId]: true }));
     try {
       const response = await reviewApi.likeReview(reviewId);
       if (response.data.success) {
         // Cập nhật trạng thái like
-        setLikedReviews(prev => ({ ...prev, [reviewId]: !prev[reviewId] }));
-        
+        setLikedReviews((prev) => ({ ...prev, [reviewId]: !prev[reviewId] }));
+
         // Cập nhật số lượng like trong reviews
-        setReviews(prev => 
-          prev.map(review => 
-            review._id === reviewId 
-              ? { 
-                  ...review, 
-                  numberOfLikes: response.data.data?.numberOfLikes || review.numberOfLikes 
-                } 
+        setReviews((prev) =>
+          prev.map((review) =>
+            review._id === reviewId
+              ? {
+                  ...review,
+                  numberOfLikes:
+                    response.data.data?.numberOfLikes || review.numberOfLikes,
+                }
               : review
           )
         );
@@ -63,7 +64,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
       console.error("Error liking review:", error);
       toast.error("Không thể thích đánh giá này");
     } finally {
-      setLikeLoading(prev => ({ ...prev, [reviewId]: false }));
+      setLikeLoading((prev) => ({ ...prev, [reviewId]: false }));
     }
   };
 
@@ -89,60 +90,107 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
       </div>
     );
   }
-
   return (
     <div className="bg-white rounded-lg">
-      <div className="mb-6 flex justify-between items-center">
-        <h3 className="text-xl font-bold">Đánh giá sản phẩm</h3>
-        <span className="text-sm text-gray-500">{reviews.length} đánh giá</span>
+      <div className="mb-8 flex justify-between items-center border-b pb-4">
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900">
+            Đánh giá sản phẩm
+          </h3>
+          <p className="text-gray-600 mt-1">
+            {reviews.length} đánh giá từ khách hàng
+          </p>
+        </div>
+        <div className="text-right">
+          <span className="text-3xl font-bold text-yellow-500">
+            {reviews.length > 0
+              ? (
+                  reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                ).toFixed(1)
+              : "0.0"}
+          </span>
+          <div className="flex justify-end mt-1">
+            {renderStars(
+              reviews.length > 0
+                ? Math.round(
+                    reviews.reduce((sum, r) => sum + r.rating, 0) /
+                      reviews.length
+                  )
+                : 0
+            )}
+          </div>
+        </div>
       </div>
 
       {reviews.length === 0 ? (
-        <div className="p-8 bg-gray-50 rounded-lg text-center">
-          <p className="text-gray-600">Chưa có đánh giá nào cho sản phẩm này.</p>
-          <p className="text-gray-500 mt-2">Hãy là người đầu tiên mua sản phẩm và đánh giá!</p>
+        <div className="p-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+            <FaRegStar className="w-8 h-8 text-gray-400" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">
+            Chưa có đánh giá nào
+          </h4>
+          <p className="text-gray-600 mb-4">
+            Hãy là người đầu tiên chia sẻ trải nghiệm về sản phẩm này!
+          </p>
+          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            Viết đánh giá đầu tiên
+          </button>
         </div>
       ) : (
         <div className="space-y-6">
           {reviews.map((review) => (
-            <div key={review._id} className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
+            <div
+              key={review._id}
+              className="bg-gradient-to-r from-gray-50 to-white p-6 rounded-xl border border-gray-100 hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-start gap-4">
                   {review.user?.avatar ? (
-                    <img 
-                      src={review.user.avatar.url} 
-                      alt={review.user.name} 
-                      className="w-10 h-10 rounded-full object-cover"
+                    <img
+                      src={review.user.avatar.url}
+                      alt={review.user.name}
+                      className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-sm"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-600 font-semibold">
-                        {review.user?.name?.charAt(0) || "U"}
-                      </span>
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
+                      <FaUser className="text-white text-lg" />
                     </div>
                   )}
                   <div>
-                    <div className="font-semibold">{review.user?.name || "Ẩn danh"}</div>
-                    <div className="flex items-center gap-1 text-sm">
+                    <div className="font-semibold text-gray-900 text-lg">
+                      {review.user?.name || "Khách hàng ẩn danh"}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
                       <div className="flex">{renderStars(review.rating)}</div>
-                      <span className="text-gray-500 ml-1">({review.rating}/5)</span>
+                      <span className="text-sm text-gray-500 font-medium">
+                        {review.rating}/5 sao
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                   {new Date(review.createdAt).toLocaleDateString("vi-VN", {
                     year: "numeric",
                     month: "short",
-                    day: "numeric"
+                    day: "numeric",
                   })}
                 </div>
               </div>
-              
-              <p className="mt-3 text-gray-700">{review.content}</p>
-              
-              <div className="mt-3 flex justify-between items-center pt-2 border-t border-gray-200">
-                <button 
-                  className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors"
+
+              <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
+                <p className="text-gray-700 leading-relaxed">
+                  {review.content}
+                </p>
+              </div>
+
+              <div className="mt-4 flex justify-between items-center">
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                    likedReviews[review._id]
+                      ? "bg-red-50 text-red-600 hover:bg-red-100"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
                   onClick={() => handleLikeReview(review._id)}
                   disabled={likeLoading[review._id]}
                 >
@@ -153,19 +201,23 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                   ) : (
                     <FaRegHeart />
                   )}
-                  <span>{review.numberOfLikes || 0}</span>
+                  <span className="font-medium">
+                    {review.numberOfLikes || 0}
+                  </span>
+                  <span className="text-sm">Hữu ích</span>
                 </button>
-                
-                {isAuthenticated && review.user?._id === (review.user?._id || '') && (
-                  <div className="flex gap-2">
-                    <button className="text-sm text-blue-600 hover:text-blue-800">
-                      Chỉnh sửa
-                    </button>
-                    <button className="text-sm text-red-600 hover:text-red-800">
-                      Xóa
-                    </button>
-                  </div>
-                )}
+
+                {isAuthenticated &&
+                  review.user?._id === (review.user?._id || "") && (
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors">
+                        Chỉnh sửa
+                      </button>
+                      <button className="px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors">
+                        Xóa
+                      </button>
+                    </div>
+                  )}
               </div>
             </div>
           ))}

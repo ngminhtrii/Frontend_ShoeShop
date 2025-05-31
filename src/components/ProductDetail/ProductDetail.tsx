@@ -3,21 +3,152 @@ import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import cartService from "../../services/CartServiceV2";
 import wishlistService from "../../services/WishlistService";
+import { productPublicService } from "../../services/ProductServiceV2";
+import { Product as ProductType } from "../../services/ProductServiceV2";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
-import { FiMinus, FiPlus, FiShoppingBag, FiShoppingCart } from "react-icons/fi";
+import {
+  FiMinus,
+  FiPlus,
+  FiShoppingBag,
+  FiShoppingCart,
+  FiInfo,
+} from "react-icons/fi";
 import ProductInfo from "./ProductInfo";
 import ProductComments from "./ProductComments";
+import ProductCard from "../ProductCard/ProductCard";
 import toast from "react-hot-toast";
 
-interface ProductDetailProps {
-  product: any;
-  attributes?: any;
-  variants?: any;
-  images?: any;
-  similarProducts?: any[];
+interface Brand {
+  _id: string;
+  name: string;
+  logo?:
+    | {
+        url: string;
+      }
+    | string;
 }
 
-const NewProductDetail: React.FC<ProductDetailProps> = ({
+interface Category {
+  _id: string;
+  name: string;
+}
+
+interface Color {
+  _id: string;
+  name: string;
+  code: string;
+  type: "solid" | "gradient";
+  colors?: string[];
+}
+
+interface Size {
+  _id: string;
+  value: string | number;
+  description?: string;
+}
+
+interface Gender {
+  id: string;
+  name: string;
+}
+
+interface ProductImage {
+  url: string;
+  alt?: string;
+}
+
+interface WishlistItem {
+  _id: string;
+  product: {
+    _id: string;
+    id?: string;
+  };
+  variant?: {
+    _id: string;
+  };
+}
+
+interface WishlistResponse {
+  data: {
+    data?: {
+      wishlist: WishlistItem[];
+    };
+  };
+}
+
+interface AddToWishlistResponse {
+  data: {
+    data: {
+      _id: string;
+    };
+  };
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+      error?: string;
+    };
+  };
+}
+
+interface VariantSize {
+  sizeId: string;
+  sizeValue?: string | number;
+  quantity: number;
+  description?: string;
+}
+
+interface Variant {
+  id: string;
+  sizes?: VariantSize[];
+  price?: number;
+  priceFinal?: number;
+  percentDiscount?: number;
+}
+
+interface Product {
+  _id: string;
+  id?: string;
+  name: string;
+  description: string;
+  category?: Category;
+  brand?: Brand;
+  stockStatus: "in_stock" | "low_stock" | "out_of_stock";
+  totalQuantity?: number;
+  rating?: number;
+  numReviews?: number;
+  images?: ProductImage[];
+  slug?: string;
+  mainImage?: string;
+  price?: number;
+}
+
+interface ProductAttributes {
+  genders?: Gender[];
+  colors?: Color[];
+  sizes?: Size[];
+  priceRange?: {
+    min: number;
+    max: number;
+  };
+  inventoryMatrix?: {
+    summary?: {
+      total: number;
+    };
+  };
+}
+
+interface ProductDetailProps {
+  product: Product;
+  attributes?: ProductAttributes;
+  variants?: Record<string, Variant>;
+  images?: Record<string, ProductImage[]>;
+  similarProducts?: Product[];
+}
+
+const ProductDetail: React.FC<ProductDetailProps> = ({
   product,
   attributes,
   variants,
@@ -36,7 +167,10 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
   const [wishlistItemId, setWishlistItemId] = useState<string | null>(null);
   const [loadingAdd, setLoadingAdd] = useState(false);
   const [loadingBuyNow, setLoadingBuyNow] = useState(false);
-  const [displayedImages, setDisplayedImages] = useState<any[]>([]);
+  const [displayedImages, setDisplayedImages] = useState<ProductImage[]>([]);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState<ProductType[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
   // Wishlist state
   const [isLiked, setIsLiked] = useState(false);
@@ -44,11 +178,40 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
 
   // Stock information for selected variant and size
   const [availableStock, setAvailableStock] = useState(0);
+  const [selectedSizeInfo, setSelectedSizeInfo] = useState<VariantSize | null>(
+    null
+  );
+
+  // Fetch related products
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (!product?._id && !product?.id) return;
+
+      setLoadingRelated(true);
+      try {
+        const response = await productPublicService.getRelatedProducts(
+          product._id || product.id || "",
+          { limit: 8 }
+        );
+
+        if (response.data.success && response.data.data) {
+          setRelatedProducts(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching related products:", error);
+        // Fallback to similar products from props
+        setRelatedProducts([]);
+      } finally {
+        setLoadingRelated(false);
+      }
+    };
+
+    fetchRelatedProducts();
+  }, [product?._id, product?.id]);
 
   // Cập nhật hiển thị ảnh theo variant được chọn
   useEffect(() => {
     if (!images) {
-      // Nếu không có thông tin images, sử dụng ảnh từ product
       if (product?.images?.length) {
         setDisplayedImages(product.images);
       }
@@ -56,33 +219,25 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
     }
 
     if (selectedGender && selectedColorId) {
-      // Tìm ảnh theo giới tính và màu sắc
       const key = `${selectedGender}-${selectedColorId}`;
       if (images[key] && images[key].length > 0) {
         setDisplayedImages(images[key]);
-        setCurrentImageIndex(0); // Reset về ảnh đầu tiên khi thay đổi variant
+        setCurrentImageIndex(0);
         return;
       }
     }
 
-    // Nếu không có ảnh cho variant cụ thể, kiểm tra xem có ảnh mặc định không
-    if (images["default"] && images["default"].length > 0) {
-      setDisplayedImages(images["default"]);
-    } else if (product?.images?.length) {
-      // Sử dụng ảnh từ product nếu không có ảnh variant
+    if (product?.images?.length) {
       setDisplayedImages(product.images);
-    } else {
-      // Không có ảnh nào
-      setDisplayedImages([]);
     }
-    setCurrentImageIndex(0);
-  }, [selectedGender, selectedColorId, images, product]);
+  }, [images, product?.images, selectedGender, selectedColorId]);
 
   // Fetch stock information when variant or size changes
   useEffect(() => {
     const fetchStockInfo = () => {
       if (!variants || !selectedGender || !selectedColorId) {
         setAvailableStock(0);
+        setSelectedSizeInfo(null);
         return;
       }
 
@@ -90,12 +245,12 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
       const variant = variants[variantKey];
 
       if (variant && variant.sizes) {
-        // Set available stock for selected size
         if (selectedSizeId) {
           const sizeInfo = variant.sizes.find(
-            (size: any) => size.sizeId === selectedSizeId
+            (size) => size.sizeId === selectedSizeId
           );
           setAvailableStock(sizeInfo?.quantity || 0);
+          setSelectedSizeInfo(sizeInfo || null);
         }
       }
     };
@@ -110,7 +265,6 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
     }
 
     if (attributes?.colors?.length && selectedGender && !selectedColorId) {
-      // Tìm màu đầu tiên có variant hợp lệ cho gender đã chọn
       for (const color of attributes.colors) {
         const variantKey = `${selectedGender}-${color._id}`;
         if (variants && variants[variantKey]) {
@@ -119,22 +273,46 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
         }
       }
     }
-  }, [attributes, variants, selectedGender]);
+  }, [attributes, variants, selectedGender, selectedColorId]);
+
+  // Fetch related products
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (!product || relatedProducts.length > 0) return;
+
+      setLoadingRelated(true);
+      try {
+        const response = await productPublicService.getRelatedProducts(
+          product._id || product.id || "",
+          { limit: 8 }
+        );
+        if (response.data.success && response.data.products) {
+          setRelatedProducts(response.data.products);
+        }
+      } catch (error) {
+        console.error("Error fetching related products:", error);
+      } finally {
+        setLoadingRelated(false);
+      }
+    };
+
+    fetchRelatedProducts();
+  }, [product, relatedProducts.length]);
 
   // Reset quantity when size changes
   useEffect(() => {
     setSelectedQuantity(1);
-  }, [selectedSizeId]);
-
+  }, [selectedSizeId, selectedColorId]);
   // Kiểm tra sản phẩm đã yêu thích chưa
   useEffect(() => {
     const fetchWishlist = async () => {
       if (!isAuthenticated) return;
 
       try {
-        const res = await wishlistService.getUserWishlist();
+        const res =
+          (await wishlistService.getUserWishlist()) as WishlistResponse;
         const foundItem = res.data.data?.wishlist.find(
-          (item: any) =>
+          (item: WishlistItem) =>
             (item.product._id === (product._id || product.id) ||
               item.product.id === (product._id || product.id)) &&
             item.variant?._id === getVariantId()
@@ -146,15 +324,23 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
         setWishlistItemId(null);
       }
     };
-    if (product && getVariantId()) fetchWishlist();
-  }, [product, selectedGender, selectedColorId, isAuthenticated]);
 
-  if (!product)
+    const getVariantId = () => {
+      if (!variants || !selectedGender || !selectedColorId) return null;
+      const variantKey = `${selectedGender}-${selectedColorId}`;
+      return variants[variantKey]?.id || null;
+    };
+
+    if (product && getVariantId()) fetchWishlist();
+  }, [product, selectedGender, selectedColorId, isAuthenticated, variants]);
+
+  if (!product) {
     return (
       <div className="text-center text-gray-500 mt-10">
         Không tìm thấy sản phẩm.
       </div>
     );
+  }
 
   const currentImage = displayedImages[currentImageIndex];
 
@@ -170,6 +356,11 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
     if (!variants || !selectedGender || !selectedColorId) return null;
     const variantKey = `${selectedGender}-${selectedColorId}`;
     return variants[variantKey] || null;
+  };
+
+  // Lấy thông tin size từ attributes
+  const getSizeDetails = (sizeId: string): Size | null => {
+    return attributes?.sizes?.find((size) => size._id === sizeId) || null;
   };
 
   // Xử lý thêm vào giỏ hàng
@@ -206,18 +397,18 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
 
       if (response.data.success) {
         toast.success("Đã thêm sản phẩm vào giỏ hàng");
-        // Reset về giá trị mặc định sau khi thêm thành công
         setSelectedQuantity(1);
       } else {
         toast.error(
           response.data.message || "Có lỗi xảy ra khi thêm vào giỏ hàng"
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Add to cart error:", error);
+      const apiError = error as ApiError;
       const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
+        apiError?.response?.data?.message ||
+        apiError?.response?.data?.error ||
         "Có lỗi xảy ra khi thêm vào giỏ hàng";
       toast.error(errorMessage);
     } finally {
@@ -251,26 +442,24 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
         return;
       }
 
-      // Thêm sản phẩm vào giỏ hàng trước
       await cartService.addToCart({
         variantId,
         sizeId: selectedSizeId,
         quantity: selectedQuantity,
       });
 
-      // Chuyển hướng đến trang giỏ hàng với query parameter để hiển thị checkout
       navigate("/cart?checkout=true");
       toast.success("Đã thêm sản phẩm vào giỏ hàng, chuyển đến thanh toán");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Buy now error:", error);
+      const apiError = error as ApiError;
       toast.error(
-        error.response?.data?.message || "Có lỗi xảy ra khi mua ngay"
+        apiError?.response?.data?.message || "Có lỗi xảy ra khi mua ngay"
       );
     } finally {
       setLoadingBuyNow(false);
     }
   };
-
   // Xử lý yêu thích
   const handleToggleWishlist = async () => {
     if (!isAuthenticated) {
@@ -293,16 +482,17 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
         setWishlistItemId(null);
         toast.success("Đã xóa khỏi danh sách yêu thích");
       } else {
-        const response = await wishlistService.addToWishlist({
-          productId: product._id || product.id,
-          variantId,
-        } as any);
+        const response = (await wishlistService.addToWishlist(
+          product._id || product.id || "",
+          variantId
+        )) as AddToWishlistResponse;
         setIsLiked(true);
-        setWishlistItemId((response.data.data as any)?._id);
+        setWishlistItemId(response.data.data._id);
         toast.success("Đã thêm vào danh sách yêu thích");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra");
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      toast.error(apiError?.response?.data?.message || "Có lỗi xảy ra");
     } finally {
       setLikeLoading(false);
     }
@@ -372,28 +562,29 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
                 đ
               </p>
 
-              {getCurrentVariant()?.percentDiscount > 0 && (
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className="text-lg text-gray-500 line-through">
-                    {getCurrentVariant()?.price?.toLocaleString()}đ
-                  </span>
-                  <span className="text-sm font-medium text-red-600 bg-red-100 px-2 py-1 rounded">
-                    -{getCurrentVariant()?.percentDiscount}%
-                  </span>
-                </div>
-              )}
+              {getCurrentVariant()?.percentDiscount &&
+                (getCurrentVariant()?.percentDiscount ?? 0) > 0 && (
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className="text-lg text-gray-500 line-through">
+                      {getCurrentVariant()?.price?.toLocaleString()}đ
+                    </span>
+                    <span className="text-sm font-medium text-red-600 bg-red-100 px-2 py-1 rounded">
+                      -{getCurrentVariant()?.percentDiscount}%
+                    </span>
+                  </div>
+                )}
             </div>
           </div>
 
           {/* Rating and reviews */}
-          {product.rating > 0 && (
+          {product.rating && product.rating > 0 && (
             <div className="flex items-center space-x-2">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
                   <svg
                     key={i}
                     className={`w-5 h-5 ${
-                      i < Math.floor(product.rating)
+                      i < Math.floor(product.rating || 0)
                         ? "text-yellow-400"
                         : "text-gray-200"
                     }`}
@@ -405,7 +596,7 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
                 ))}
               </div>
               <span className="text-sm text-gray-600">
-                {product.rating.toFixed(1)} ({product.numReviews} đánh giá)
+                {product.rating.toFixed(1)} ({product.numReviews || 0} đánh giá)
               </span>
             </div>
           )}
@@ -415,7 +606,7 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
             <div>
               <h3 className="text-lg font-medium mb-3">Giới tính:</h3>
               <div className="flex gap-2">
-                {attributes.genders.map((gender: any) => (
+                {attributes.genders.map((gender) => (
                   <button
                     key={gender.id}
                     onClick={() => {
@@ -442,11 +633,11 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
               <h3 className="text-lg font-medium mb-3">Màu sắc:</h3>
               <div className="flex flex-wrap gap-2">
                 {attributes.colors
-                  .filter((color: any) => {
+                  .filter((color) => {
                     const variantKey = `${selectedGender}-${color._id}`;
-                    return variants[variantKey];
+                    return variants && variants[variantKey];
                   })
-                  .map((color: any) => (
+                  .map((color) => (
                     <button
                       key={color._id}
                       onClick={() => {
@@ -497,31 +688,82 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
             </div>
           )}
 
-          {/* Size selection */}
+          {/* Size selection với size description */}
           {selectedGender && selectedColorId && getCurrentVariant() && (
             <div>
-              <h3 className="text-lg font-medium mb-3">Kích thước:</h3>
-              <div className="flex flex-wrap gap-2">
-                {getCurrentVariant().sizes?.map((sizeInfo: any) => (
-                  <button
-                    key={sizeInfo.sizeId}
-                    onClick={() => setSelectedSizeId(sizeInfo.sizeId)}
-                    disabled={sizeInfo.quantity === 0}
-                    className={`px-4 py-2 border rounded-lg transition-colors ${
-                      selectedSizeId === sizeInfo.sizeId
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : sizeInfo.quantity === 0
-                        ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "border-gray-300 hover:border-gray-400"
-                    }`}
-                  >
-                    {sizeInfo.sizeValue}
-                    {sizeInfo.quantity === 0 && (
-                      <span className="block text-xs">Hết hàng</span>
-                    )}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-medium">Kích thước:</h3>
+                <button
+                  onClick={() => setShowSizeGuide(!showSizeGuide)}
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <FiInfo size={14} />
+                  Hướng dẫn chọn size
+                </button>
               </div>
+
+              <div className="flex flex-wrap gap-2">
+                {getCurrentVariant()?.sizes?.map((sizeInfo) => {
+                  const sizeDetails = getSizeDetails(sizeInfo.sizeId);
+                  return (
+                    <div key={sizeInfo.sizeId} className="relative group">
+                      <button
+                        onClick={() => setSelectedSizeId(sizeInfo.sizeId)}
+                        disabled={sizeInfo.quantity === 0}
+                        className={`px-4 py-2 border rounded-lg transition-colors ${
+                          selectedSizeId === sizeInfo.sizeId
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : sizeInfo.quantity === 0
+                            ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "border-gray-300 hover:border-gray-400"
+                        }`}
+                      >
+                        {sizeInfo.sizeValue}
+                        {sizeInfo.quantity === 0 && (
+                          <span className="block text-xs">Hết hàng</span>
+                        )}
+                      </button>
+
+                      {/* Size description tooltip */}
+                      {sizeDetails?.description && (
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          {sizeDetails.description}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Selected size description */}
+              {selectedSizeInfo &&
+                getSizeDetails(selectedSizeInfo.sizeId)?.description && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FiInfo className="text-blue-600" size={16} />
+                      <span className="text-sm font-medium text-blue-900">
+                        Size {selectedSizeInfo.sizeValue}:
+                      </span>
+                    </div>
+                    <p className="text-sm text-blue-800 mt-1">
+                      {getSizeDetails(selectedSizeInfo.sizeId)?.description}
+                    </p>
+                  </div>
+                )}
+
+              {/* Size guide */}
+              {showSizeGuide && (
+                <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+                  <h4 className="font-medium mb-2">Hướng dẫn chọn size giày</h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• Đo chiều dài bàn chân từ gót đến ngón cái dài nhất</p>
+                    <p>• Nên đo vào buổi chiều khi bàn chân hơi phù</p>
+                    <p>• Chọn size lớn hơn 0.5-1cm so với chiều dài bàn chân</p>
+                    <p>• Tham khảo bảng size cụ thể của từng thương hiệu</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -567,12 +809,12 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
                 !selectedSizeId ||
                 availableStock < selectedQuantity
               }
-              className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg ${
+              className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium ${
                 loadingAdd ||
                 !selectedSizeId ||
                 availableStock < selectedQuantity
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-blue-600 text-white hover:bg-blue-700 transform hover:scale-105 transition-all duration-200"
               }`}
             >
               {loadingAdd ? (
@@ -584,6 +826,7 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
                 </>
               )}
             </button>
+
             <button
               onClick={handleBuyNow}
               disabled={
@@ -591,12 +834,12 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
                 !selectedSizeId ||
                 availableStock < selectedQuantity
               }
-              className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg ${
+              className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium ${
                 loadingBuyNow ||
                 !selectedSizeId ||
                 availableStock < selectedQuantity
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-red-600 text-white hover:bg-red-700"
+                  : "bg-red-600 text-white hover:bg-red-700 transform hover:scale-105 transition-all duration-200"
               }`}
             >
               {loadingBuyNow ? (
@@ -608,10 +851,11 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
                 </>
               )}
             </button>
+
             <button
               onClick={handleToggleWishlist}
               disabled={likeLoading || !selectedColorId}
-              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border ${
+              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border font-medium ${
                 likeLoading || !selectedColorId
                   ? "border-gray-300 text-gray-400 cursor-not-allowed"
                   : isLiked
@@ -656,55 +900,88 @@ const NewProductDetail: React.FC<ProductDetailProps> = ({
             <div className="py-4">
               {activeTab === "details" && <ProductInfo product={product} />}
               {activeTab === "reviews" && (
-                <ProductComments productId={product._id || product.id} />
+                <ProductComments productId={product._id || product.id || ""} />
               )}
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Similar products */}
-      {similarProducts && similarProducts.length > 0 && (
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold mb-6">Sản phẩm tương tự</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {similarProducts.slice(0, 4).map((similarProduct) => (
-              <div
-                key={similarProduct._id}
-                className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() =>
-                  navigate(
-                    `/product/${similarProduct._id || similarProduct.slug}`
-                  )
-                }
-              >
-                <div className="aspect-square overflow-hidden">
-                  <img
-                    src={
-                      similarProduct.mainImage ||
-                      (similarProduct.images && similarProduct.images.length > 0
-                        ? similarProduct.images[0].url
-                        : "/image/product.jpg")
-                    }
-                    alt={similarProduct.name}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium mb-2 line-clamp-2">
-                    {similarProduct.name}
-                  </h3>
-                  <p className="text-red-600 font-bold">
-                    {similarProduct.price?.toLocaleString("vi-VN")}đ
-                  </p>
-                </div>
-              </div>
-            ))}
+      </div>{" "}
+      {/* Related Products Section */}
+      {(relatedProducts.length > 0 ||
+        (similarProducts && similarProducts.length > 0)) && (
+        <div className="mt-16 border-t pt-12">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Sản phẩm liên quan
+            </h2>
+            <span className="text-sm text-gray-500">
+              {loadingRelated
+                ? "Đang tải..."
+                : `${
+                    relatedProducts.length || similarProducts?.length || 0
+                  } sản phẩm được đề xuất`}
+            </span>
           </div>
+
+          {loadingRelated ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+              {[...Array(5)].map((_, index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="aspect-square bg-gray-200 rounded-t-lg"></div>
+                  <div className="p-3 md:p-4 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {" "}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                {(relatedProducts.length > 0
+                  ? relatedProducts
+                  : similarProducts || []
+                )
+                  .slice(0, 10)
+                  .map((relatedProduct) => (
+                    <ProductCard
+                      key={relatedProduct._id}
+                      product={relatedProduct as ProductType}
+                      onClick={() =>
+                        navigate(
+                          `/product/${
+                            relatedProduct.slug || relatedProduct._id
+                          }`
+                        )
+                      }
+                    />
+                  ))}
+              </div>
+              {/* View all button */}
+              {(relatedProducts.length > 10 ||
+                (similarProducts && similarProducts.length > 10)) && (
+                <div className="text-center mt-8">
+                  <button
+                    onClick={() => {
+                      const categoryId =
+                        product.category?._id ||
+                        (product.category as { id?: string })?.id;
+                      navigate(`/products?category=${categoryId}`);
+                    }}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Xem tất cả sản phẩm cùng loại
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-export default NewProductDetail;
+export default ProductDetail;
