@@ -1,43 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import NewProductDetail from "../../components/ProductDetail/ProductDetail";
+import {
+  ProductAttributes,
+  ProductVariants,
+  ProductImages,
+} from "../../types/product";
+import ProductDetail from "../../components/ProductDetail/ProductDetail";
 import { Product, productPublicService } from "../../services/ProductServiceV2";
-
-interface ProductAttributes {
-  genders?: Array<{ id: string; name: string }>;
-  colors?: Array<{
-    _id: string;
-    name: string;
-    code: string;
-    type: string;
-    colors?: string[];
-  }>;
-  sizes?: Array<{ _id: string; value: string; description?: string }>;
-}
-
-interface ProductVariants {
-  [key: string]: {
-    id: string;
-    price: number;
-    priceFinal: number;
-    percentDiscount: number;
-    sizes: Array<{
-      sizeId: string;
-      quantity: number;
-      isSizeAvailable: boolean;
-    }>;
-  };
-}
-
-interface ProductImages {
-  [key: string]: Array<{
-    url: string;
-    public_id: string;
-    isMain: boolean;
-    displayOrder: number;
-  }>;
-}
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -231,47 +201,56 @@ const ProductDetailPage: React.FC = () => {
     );
   };
 
+  // Render loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Đang tải...</p>
           </div>
         </div>
       </div>
     );
   }
 
+  // Render error state
   if (error) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 text-lg mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Thử lại
-          </button>
+      <div className="min-h-screen bg-white">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-red-600">{error}</p>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Render not found state
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-gray-600">Không tìm thấy sản phẩm</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main render - chỉ khi có product
   return (
-    <div className="min-h-screen bg-white">
-      {/* Main product detail */}
-      <NewProductDetail
+    <div>
+      <ProductDetail
         product={product}
-        attributes={attributes}
-        variants={variants}
-        images={images}
+        attributes={attributes || undefined}
+        variants={variants || undefined}
+        images={images || undefined}
         similarProducts={similarProducts}
       />
-
-      {/* Related products section */}
       <RelatedProducts />
     </div>
   );

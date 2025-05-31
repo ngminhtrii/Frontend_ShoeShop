@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../../../components/User/Sidebar";
 import OrderCard from "../../../components/User/OrderCard";
 import { orderApi } from "../../../services/OrderService";
-import MainNavbar from "../../../components/Navbar/MainNavbar"; // Thêm dòng này
 
 const UserManageOrder: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -28,7 +27,6 @@ const UserManageOrder: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      <MainNavbar /> {/* Thêm dòng này */}
       <div className="flex flex-1">
         <Sidebar />
         <div className="flex-1 p-10">

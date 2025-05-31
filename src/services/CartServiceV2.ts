@@ -5,151 +5,190 @@ export interface CartItem {
   variant: {
     _id: string;
     color: {
-      _id: string;
       name: string;
       code: string;
-      type?: string;
-      colors?: string[];
-    };
-    product: {
-      _id: string;
-      name: string;
-      slug: string;
-      images: Array<{
-        url: string;
-        public_id: string;
-        isMain: boolean;
-        displayOrder: number;
-      }>;
     };
     price: number;
     priceFinal: number;
     percentDiscount?: number;
-    isActive: boolean;
-    imagesvariant?: Array<{
-      url: string;
-      public_id: string;
-      isMain: boolean;
-      displayOrder: number;
-    }>;
   };
   size: {
     _id: string;
-    value: number;
-    description?: string;
+    value: string | number;
   };
   quantity: number;
   price: number;
   productName: string;
   image: string;
-  isAvailable: boolean;
   isSelected: boolean;
-  unavailableReason: string;
-  addedAt: string;
+  isAvailable: boolean;
+  unavailableReason?: string;
 }
 
 export interface Cart {
   _id: string;
   user: string;
   cartItems: CartItem[];
-  totalItems: number;
-  subTotal: number;
-  createdAt: string;
-  updatedAt: string;
+  totalQuantity: number;
+  totalPrice: number;
 }
 
-export interface CartResponse {
-  success: boolean;
-  message: string;
-  data: {
-    cart: Cart;
-  };
-}
-
-export interface AddToCartData {
+export interface AddToCartRequest {
   variantId: string;
   sizeId: string;
   quantity: number;
 }
 
-export interface UpdateCartItemData {
+export interface UpdateCartItemRequest {
   quantity: number;
 }
 
-export interface PreviewOrderData {
+export interface PreviewOrderRequest {
   couponCode?: string;
 }
 
-export interface PreviewOrderResponse {
+export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
-  preview: {
-    items: number;
-    itemsDetail: Array<{
-      productId: string;
-      productName: string;
-      variantId: string;
-      color: {
-        name: string;
-        type: string;
-        code: string;
-      };
-      sizeId: string;
-      sizeValue: number;
-      sizeDescription?: string;
-      price: number;
-      quantity: number;
-      image: string;
-      totalPrice: number;
-    }>;
-    totalQuantity: number;
-    subTotal: number;
-    discount: number;
-    shippingFee: number;
-    totalPrice: number;
-    couponApplied: boolean;
-    couponDetail?: {
-      code: string;
-      type: string;
-      value: number;
-      maxDiscount?: number;
-    };
-  };
+  data?: T;
+  cart?: Cart;
+  preview?: any;
 }
 
 export const cartService = {
   // Lấy giỏ hàng hiện tại
-  getCart: (): Promise<{ data: CartResponse }> =>
-    axiosInstanceAuth.get("/api/v1/cart"),
+  getCart: (): Promise<{ data: ApiResponse<Cart> }> => {
+    console.log("🛒 CartService: Getting cart...");
+    return axiosInstanceAuth
+      .get("/api/v1/cart")
+      .then((response) => {
+        console.log("🛒 CartService: Cart response received:", response.data);
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          "🛒 CartService: Error getting cart:",
+          error.response?.data || error.message
+        );
+        throw error;
+      });
+  },
 
   // Thêm sản phẩm vào giỏ hàng
-  addToCart: (data: AddToCartData): Promise<{ data: CartResponse }> =>
-    axiosInstanceAuth.post("/api/v1/cart/items", data),
+  addToCart: (data: AddToCartRequest): Promise<{ data: ApiResponse<Cart> }> => {
+    console.log("🛒 CartService: Adding to cart:", data);
+    return axiosInstanceAuth
+      .post("/api/v1/cart/items", data)
+      .then((response) => {
+        console.log("🛒 CartService: Add to cart response:", response.data);
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          "🛒 CartService: Error adding to cart:",
+          error.response?.data || error.message
+        );
+        throw error;
+      });
+  },
 
-  // Cập nhật số lượng sản phẩm trong giỏ hàng
+  // Cập nhật số lượng sản phẩm
   updateCartItemQuantity: (
     itemId: string,
-    data: UpdateCartItemData
-  ): Promise<{ data: CartResponse }> =>
-    axiosInstanceAuth.put(`/api/v1/cart/items/${itemId}`, data),
+    data: UpdateCartItemRequest
+  ): Promise<{ data: ApiResponse<Cart> }> => {
+    console.log("🛒 CartService: Updating cart item quantity:", itemId, data);
+    return axiosInstanceAuth
+      .put(`/api/v1/cart/items/${itemId}`, data)
+      .then((response) => {
+        console.log("🛒 CartService: Update quantity response:", response.data);
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          "🛒 CartService: Error updating quantity:",
+          error.response?.data || error.message
+        );
+        throw error;
+      });
+  },
 
-  // Toggle chọn sản phẩm trong giỏ hàng
-  toggleCartItem: (itemId: string): Promise<{ data: CartResponse }> =>
-    axiosInstanceAuth.patch(`/api/v1/cart/items/${itemId}/toggle`),
+  // Chọn/bỏ chọn sản phẩm
+  toggleCartItem: (itemId: string): Promise<{ data: ApiResponse<Cart> }> => {
+    console.log("🛒 CartService: Toggling cart item:", itemId);
+    return axiosInstanceAuth
+      .patch(`/api/v1/cart/items/${itemId}/toggle`)
+      .then((response) => {
+        console.log("🛒 CartService: Toggle item response:", response.data);
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          "🛒 CartService: Error toggling item:",
+          error.response?.data || error.message
+        );
+        throw error;
+      });
+  },
 
-  // Xóa sản phẩm đã chọn khỏi giỏ hàng
-  removeSelectedItems: (): Promise<{ data: CartResponse }> =>
-    axiosInstanceAuth.delete("/api/v1/cart/items"),
+  // Xóa các sản phẩm đã chọn
+  removeSelectedItems: (): Promise<{ data: ApiResponse<Cart> }> => {
+    console.log("🛒 CartService: Removing selected items");
+    return axiosInstanceAuth
+      .delete("/api/v1/cart/items")
+      .then((response) => {
+        console.log(
+          "🛒 CartService: Remove selected items response:",
+          response.data
+        );
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          "🛒 CartService: Error removing selected items:",
+          error.response?.data || error.message
+        );
+        throw error;
+      });
+  },
 
   // Xóa toàn bộ giỏ hàng
-  clearCart: (): Promise<{ data: CartResponse }> =>
-    axiosInstanceAuth.delete("/api/v1/cart"),
+  clearCart: (): Promise<{ data: ApiResponse }> => {
+    console.log("🛒 CartService: Clearing cart");
+    return axiosInstanceAuth
+      .delete("/api/v1/cart")
+      .then((response) => {
+        console.log("🛒 CartService: Clear cart response:", response.data);
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          "🛒 CartService: Error clearing cart:",
+          error.response?.data || error.message
+        );
+        throw error;
+      });
+  },
 
   // Xem trước đơn hàng trước khi tạo
   previewBeforeOrder: (
-    data: PreviewOrderData
-  ): Promise<{ data: PreviewOrderResponse }> =>
-    axiosInstanceAuth.post("/api/v1/cart/preview-before-order", data),
+    data: PreviewOrderRequest = {}
+  ): Promise<{ data: ApiResponse }> => {
+    console.log("🛒 CartService: Previewing order:", data);
+    return axiosInstanceAuth
+      .post("/api/v1/cart/preview-before-order", data)
+      .then((response) => {
+        console.log("🛒 CartService: Preview order response:", response.data);
+        return response;
+      })
+      .catch((error) => {
+        console.error(
+          "🛒 CartService: Error previewing order:",
+          error.response?.data || error.message
+        );
+        throw error;
+      });
+  },
 };
 
 export default cartService;

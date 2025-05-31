@@ -4,7 +4,6 @@ import Cart from "../../../components/Cart/Cart";
 const CartPage: React.FC = () => {
   return (
     <div>
-      {/*<MainNavbar/>*/}
       <Cart />
     </div>
   );

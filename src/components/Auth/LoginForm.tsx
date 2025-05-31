@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import Cookie from "js-cookie";
-//import { toast } from "react-toastify";
-// @ts-ignore
+import useAuth from "../../hooks/useAuth";
+import { toast } from "react-hot-toast";
+// @ts-expect-error - Font import doesn't have TypeScript types
 import "@fontsource/lobster";
 import { authenticateApi } from "../../services/AuthenticationService";
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [registerName, setRegisterName] = useState("");
@@ -21,17 +22,22 @@ const LoginForm: React.FC = () => {
         password: loginPassword,
       });
 
-      Cookie.set("token", response.data.token, { expires: 7 });
+      // Gọi hàm login từ useAuth để cập nhật state
+      login(response.data);
 
-      console.log("🎉 Đăng nhập thành công:", response);
+      toast.success("Đăng nhập thành công!");
+
       if (response.data.role === "admin") {
         navigate("/admin");
       } else {
-        navigate("/");
+        // Lấy redirect URL từ query params nếu có
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams.get("redirect") || "/";
+        navigate(redirectTo);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("🚨 Đăng nhập thất bại:", error);
-      alert("Email hoặc mật khẩu không đúng!");
+      toast.error("Email hoặc mật khẩu không đúng!");
     }
   };
 
@@ -51,11 +57,18 @@ const LoginForm: React.FC = () => {
         );
         navigate("/otp-verification");
       }
-    } catch (error: any) {
-      console.error(
-        "🚨 Đăng ký thất bại:",
-        error.response?.data?.message || "Đăng ký thất bại!"
-      );
+    } catch (error: unknown) {
+      let errorMessage = "Đăng ký thất bại!";
+      if (error && typeof error === "object" && "response" in error) {
+        const response = (
+          error as { response?: { data?: { message?: string } } }
+        ).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
+      console.error("🚨 Đăng ký thất bại:", errorMessage);
+      toast.error(errorMessage);
     }
   };
 

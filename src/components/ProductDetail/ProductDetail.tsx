@@ -86,6 +86,7 @@ interface AddToWishlistResponse {
 
 interface ApiError {
   response?: {
+    status?: number;
     data?: {
       message?: string;
       error?: string;
@@ -362,12 +363,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   const getSizeDetails = (sizeId: string): Size | null => {
     return attributes?.sizes?.find((size) => size._id === sizeId) || null;
   };
-
-  // Xử lý thêm vào giỏ hàng
+  // Xử lý thêm vào giỏ hàng - Cập nhật với error handling tốt hơn
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-      navigate("/login");
+      // Lưu URL hiện tại để quay lại sau khi đăng nhập
+      navigate(
+        `/login?returnUrl=${encodeURIComponent(window.location.pathname)}`
+      );
       return;
     }
 
@@ -398,29 +401,34 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       if (response.data.success) {
         toast.success("Đã thêm sản phẩm vào giỏ hàng");
         setSelectedQuantity(1);
-      } else {
-        toast.error(
-          response.data.message || "Có lỗi xảy ra khi thêm vào giỏ hàng"
-        );
       }
     } catch (error: unknown) {
       console.error("Add to cart error:", error);
       const apiError = error as ApiError;
-      const errorMessage =
-        apiError?.response?.data?.message ||
-        apiError?.response?.data?.error ||
-        "Có lỗi xảy ra khi thêm vào giỏ hàng";
-      toast.error(errorMessage);
+
+      // Nếu lỗi xác thực, hướng đến trang đăng nhập
+      if (apiError.response?.status === 401) {
+        toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        // Không redirect ngay lập tức vì axios interceptor sẽ xử lý
+      } else {
+        const errorMessage =
+          apiError?.response?.data?.message ||
+          apiError?.response?.data?.error ||
+          "Có lỗi xảy ra khi thêm vào giỏ hàng";
+        toast.error(errorMessage);
+      }
     } finally {
       setLoadingAdd(false);
     }
   };
 
-  // Xử lý mua ngay
+  // Xử lý mua ngay - Cập nhật với error handling tốt hơn
   const handleBuyNow = async () => {
     if (!isAuthenticated) {
       toast.error("Vui lòng đăng nhập để mua hàng");
-      navigate("/login");
+      navigate(
+        `/login?returnUrl=${encodeURIComponent(window.location.pathname)}`
+      );
       return;
     }
 
@@ -442,29 +450,37 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         return;
       }
 
-      await cartService.addToCart({
+      const response = await cartService.addToCart({
         variantId,
         sizeId: selectedSizeId,
         quantity: selectedQuantity,
       });
 
-      navigate("/cart?checkout=true");
-      toast.success("Đã thêm sản phẩm vào giỏ hàng, chuyển đến thanh toán");
+      if (response.data.success) {
+        navigate("/cart?checkout=true");
+        toast.success("Đã thêm sản phẩm vào giỏ hàng, chuyển đến thanh toán");
+      }
     } catch (error: unknown) {
       console.error("Buy now error:", error);
       const apiError = error as ApiError;
-      toast.error(
-        apiError?.response?.data?.message || "Có lỗi xảy ra khi mua ngay"
-      );
+
+      if (apiError.response?.status === 401) {
+        toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+      } else {
+        const errorMessage =
+          apiError?.response?.data?.message || "Có lỗi xảy ra khi mua ngay";
+        toast.error(errorMessage);
+      }
     } finally {
       setLoadingBuyNow(false);
     }
-  };
-  // Xử lý yêu thích
+  }; // Xử lý yêu thích
   const handleToggleWishlist = async () => {
     if (!isAuthenticated) {
       toast.error("Vui lòng đăng nhập để sử dụng tính năng này");
-      navigate("/login");
+      // Lưu URL hiện tại để redirect sau khi đăng nhập
+      const currentPath = window.location.pathname + window.location.search;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
 
@@ -945,9 +961,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   : similarProducts || []
                 )
                   .slice(0, 10)
-                  .map((relatedProduct) => (
+                  .map((relatedProduct, index) => (
                     <ProductCard
-                      key={relatedProduct._id}
+                      key={
+                        relatedProduct._id ||
+                        relatedProduct.id ||
+                        `product-${index}`
+                      }
                       product={relatedProduct as ProductType}
                       onClick={() =>
                         navigate(

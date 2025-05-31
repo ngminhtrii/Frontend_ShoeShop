@@ -1,14 +1,12 @@
 import React from "react";
 import Sidebar from "../../../components/User/Sidebar";
 import UserForm from "../../../components/User/UserForm";
-import MainNavbar from "../../../components/Navbar/MainNavbar";
 // import banner from "../../../assets/banner.jpg";
 
 const UserInformation: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <MainNavbar />
 
       <div className="flex flex-1 bg-gray-100">
         {/* Sidebar */}

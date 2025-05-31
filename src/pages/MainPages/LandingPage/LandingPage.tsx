@@ -4,9 +4,18 @@ import {
   Product,
   productPublicService,
 } from "../../../services/ProductServiceV2";
+import { publicCouponService } from "../../../services/CouponServiceV2";
+import { Coupon } from "../../../types/coupon";
 import ProductCard from "../../../components/ProductCard/ProductCard";
 import { toast } from "react-hot-toast";
-import { FiChevronRight } from "react-icons/fi";
+import {
+  FiChevronRight,
+  FiTag,
+  FiPercent,
+  FiDollarSign,
+  FiCopy,
+  FiCalendar,
+} from "react-icons/fi";
 import { BsArrowLeft, BsArrowRight } from "react-icons/bs";
 
 const LandingPage: React.FC = () => {
@@ -15,6 +24,7 @@ const LandingPage: React.FC = () => {
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [publicCoupons, setPublicCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
@@ -56,13 +66,20 @@ const LandingPage: React.FC = () => {
 
       try {
         // Fetch song song để tăng performance
-        const [featuredRes, bestSellersRes, newArrivalsRes, allProductsRes] =
-          await Promise.all([
-            productPublicService.getFeaturedProducts({ limit: 8 }),
-            productPublicService.getBestSellers({ limit: 8 }),
-            productPublicService.getNewArrivals({ limit: 8 }),
-            productPublicService.getProducts({ limit: 8 }),
-          ]);
+        const [
+          featuredRes,
+          bestSellersRes,
+          newArrivalsRes,
+          allProductsRes,
+          couponsRes,
+        ] = await Promise.all([
+          productPublicService.getFeaturedProducts({ limit: 8 }),
+          productPublicService.getBestSellers({ limit: 8 }),
+          productPublicService.getNewArrivals({ limit: 8 }),
+          productPublicService.getProducts({ limit: 8 }),
+          // Lấy 5 mã giảm giá để hiển thị trên trang chủ
+          publicCouponService.getPublicCoupons({ limit: 5, status: "active" }),
+        ]);
 
         // Kiểm tra và xử lý dữ liệu trả về từ API
         if (featuredRes.data.success) {
@@ -93,6 +110,14 @@ const LandingPage: React.FC = () => {
           console.log("All products:", products);
           setAllProducts(products);
         }
+
+        // Xử lý dữ liệu coupon - sửa để khớp với cấu trúc response
+        if (couponsRes.data.success) {
+          // Dữ liệu coupons nằm ở level root của response, không phải trong data
+          const coupons = couponsRes.data.coupons || [];
+          console.log("Public coupons:", coupons);
+          setPublicCoupons(coupons);
+        }
       } catch (error) {
         console.error("Error fetching landing page data:", error);
         setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.");
@@ -104,6 +129,32 @@ const LandingPage: React.FC = () => {
 
     fetchData();
   }, []);
+
+  // Copy coupon code to clipboard
+  const copyCouponCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success(`Đã sao chép mã: ${code}`);
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+      toast.error("Không thể sao chép mã giảm giá");
+    }
+  };
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString("vi-VN") + "đ";
+  };
 
   if (loading) {
     return (
@@ -172,7 +223,7 @@ const LandingPage: React.FC = () => {
       <h2 className="text-3xl font-bold">{title}</h2>
       <Link
         to={linkTo}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+        className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
       >
         <span>{linkText}</span>
         <FiChevronRight className="ml-1" />
@@ -207,6 +258,72 @@ const LandingPage: React.FC = () => {
         </div>
       )}
     </>
+  );
+
+  // Coupon Card Component - Thiết kế với height đồng đều và màu copy nhạt
+  const CouponCard = ({ coupon }: { coupon: Coupon }) => (
+    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 hover:border-gray-800 hover:shadow-md transition-all duration-300 relative overflow-hidden min-w-0 h-full flex flex-col">
+      {/* Decorative corner */}
+      <div className="absolute top-0 right-0 w-4 h-4 bg-gray-800 transform rotate-45 translate-x-2 -translate-y-2"></div>
+
+      <div className="relative flex flex-col h-full">
+        {/* Header với icon và type */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-1">
+            {coupon.type === "percent" ? (
+              <FiPercent className="text-gray-800 w-3 h-3" />
+            ) : (
+              <FiDollarSign className="text-gray-800 w-3 h-3" />
+            )}
+            <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+              {coupon.type === "percent" ? "Giảm %" : "Giảm tiền"}
+            </span>
+          </div>
+          <FiTag className="text-gray-400 w-3 h-3" />
+        </div>
+
+        {/* Giá trị giảm giá */}
+        <div className="mb-2">
+          <div className="text-lg font-bold text-gray-900 mb-1">
+            {coupon.type === "percent"
+              ? `${coupon.value}%`
+              : formatCurrency(coupon.value)}
+          </div>
+          {coupon.maxDiscount && coupon.type === "percent" && (
+            <div className="text-xs text-gray-600">
+              Tối đa {formatCurrency(coupon.maxDiscount)}
+            </div>
+          )}
+        </div>
+
+        {/* Mô tả */}
+        <div className="mb-3 flex-grow">
+          <p className="text-xs text-gray-700 line-clamp-2 leading-relaxed">
+            {coupon.description}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Đơn tối thiểu {formatCurrency(coupon.minOrderValue)}
+          </p>
+        </div>
+
+        {/* Footer với ngày hết hạn */}
+        <div className="mb-2">
+          <div className="flex items-center space-x-1 text-xs text-gray-500">
+            <FiCalendar size={10} />
+            <span>HSD: {formatDate(coupon.endDate)}</span>
+          </div>
+        </div>
+
+        {/* Copy button - với màu nhạt hơn */}
+        <button
+          onClick={() => copyCouponCode(coupon.code)}
+          className="w-full flex items-center justify-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors mt-auto"
+        >
+          <span className="font-mono">{coupon.code}</span>
+          <FiCopy size={10} />
+        </button>
+      </div>
+    </div>
   );
 
   return (
@@ -254,6 +371,42 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Mã giảm giá - Layout ngang với height đồng đều */}
+      {publicCoupons && publicCoupons.length > 0 && (
+        <section className="py-12 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-bold text-gray-900 mb-2">
+                Mã giảm giá hấp dẫn
+              </h2>
+              <p className="text-gray-600 max-w-xl mx-auto text-sm">
+                Sử dụng các mã giảm giá dưới đây để nhận ưu đãi tốt nhất cho đơn
+                hàng của bạn
+              </p>
+            </div>
+
+            {/* Grid ngang cho 5 mã giảm giá với height đồng đều */}
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-stretch">
+                {publicCoupons.map((coupon) => (
+                  <CouponCard key={coupon._id} coupon={coupon} />
+                ))}
+              </div>
+            </div>
+
+            <div className="text-center mt-8">
+              <Link
+                to="/coupons"
+                className="inline-flex items-center px-6 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-black transition-colors font-medium text-sm"
+              >
+                <span>Xem tất cả mã giảm giá</span>
+                <FiChevronRight className="ml-1 w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Tất cả sản phẩm */}
       <section className="py-16 bg-white">
