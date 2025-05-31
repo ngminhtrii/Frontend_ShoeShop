@@ -1,18 +1,9 @@
 import React, { useState } from "react";
+import { Product } from "../../../model/Product";
 
 interface EditProductProps {
   handleClose: () => void;
-  product: {
-    id: string;
-    name: string;
-    slug: string;
-    description: string;
-    category: string;
-    brand: string;
-    price: number;
-    stockStatus: string;
-    images: { url: string; public_id: string; isMain: boolean }[];
-  };
+  product: Product;
 }
 
 const EditProduct: React.FC<EditProductProps> = ({ handleClose, product }) => {
@@ -80,7 +71,7 @@ const EditProduct: React.FC<EditProductProps> = ({ handleClose, product }) => {
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             ></textarea>
-          </div>
+          </div>{" "}
           <div className="mb-4">
             <label className="block text-sm font-medium text-black">
               Danh Mục
@@ -88,7 +79,7 @@ const EditProduct: React.FC<EditProductProps> = ({ handleClose, product }) => {
             <input
               type="text"
               name="category"
-              value={formData.category}
+              value={formData.category?.name || ""}
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
@@ -100,20 +91,10 @@ const EditProduct: React.FC<EditProductProps> = ({ handleClose, product }) => {
             <input
               type="text"
               name="brand"
-              value={formData.brand}
+              value={formData.brand?.name || ""}
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-black">Giá</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
+            />{" "}
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-black">

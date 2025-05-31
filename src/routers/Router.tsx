@@ -1,5 +1,6 @@
 import OrderConfirmationPage from "../pages/OrderConfirmationPage/OrderConfirmationPage";
 import ProductDetailPage from "../pages/ProductDetailPage/ProductDetailPage";
+import ProductListPage from "../pages/MainPages/ProductListPage";
 import { Route, Routes } from "react-router-dom";
 import LoginPage from "../pages/AuthPages/LoginPage";
 import RegisterPage from "../pages/AuthPages/RegisterPage";
@@ -30,7 +31,7 @@ import VariantPage from "../pages/AdminPages/VariantPage/VariantPage";
 const Router = () => {
   return (
     <Routes>
-      {/* Các path không cần chỉnh layout */}
+      {/* Các routes không cần layout */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/otp-verification" element={<OTPVerificationPage />} />
@@ -40,47 +41,29 @@ const Router = () => {
       <Route path="/user-manage-order" element={<UserManageOrderPage />} />
       <Route path="/like-page" element={<LikePage />} />
       <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
-      <Route path="/product-detail/:id" element={<ProductDetailPage />} />
       <Route path="/payment/status" element={<PaymentStatusPage />} />
-      {/* Các path cần chỉnh layout */}
-      {/* Admin */}
+
+      {/* Admin routes */}
       <Route path="/admin/*" element={<AdminLayout />}>
-        <Route path="" element={<Dashboard />} />
-        <Route path="user" element={<div>Admin User</div>} />
-      </Route>
-      {/* User */}
-      <Route path="*" element={<MainLayout />}>
-        <Route path="" element={<LandingPage />} />
-      </Route>
-      {/* Các path không cần chỉnh layout */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/otp-verification" element={<OTPVerificationPage />} />
-      <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
-      <Route path="/cart" element={<CartPage />} />
-      <Route path="/user-information" element={<UserInformationPage />} />
-      <Route path="/user-manage-order" element={<UserManageOrderPage />} />
-      <Route path="/like-page" element={<LikePage />} />
-      {/* Các path cần chỉnh layout */}
-      {/* Admin */}
-      <Route path="/admin/*" element={<AdminLayout />}>
-        <Route path="products" element={<ProductPage />} />
-        <Route path="products/discount" element={<DiscountPage />} />
         <Route path="" element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="products" element={<ProductPage />} />
+        <Route path="products/discount" element={<DiscountPage />} />
+        <Route path="products/variants" element={<VariantPage />} />
         <Route path="users" element={<ListCustomerPage />} />
         <Route path="edit-user" element={<EditCustomerPage />} />
         <Route path="categories" element={<ListCategoriesPage />} />
         <Route path="brand" element={<BrandPage />} />
         <Route path="color" element={<ColorPage />} />
         <Route path="size" element={<SizePage />} />
-        {/*<Route path="add-categories" element={<AddCategoryPage/>} />*/}
-        <Route path="products/variants" element={<VariantPage />} />
         <Route path="orders" element={<ListOrderPage />} />
       </Route>
-      {/* User */}
-      <Route path="*" element={<MainLayout />}>
+
+      {/* Main layout routes */}
+      <Route path="/" element={<MainLayout />}>
         <Route path="" element={<LandingPage />} />
+        <Route path="products" element={<ProductListPage />} />
+        <Route path="product/:id" element={<ProductDetailPage />} />
       </Route>
     </Routes>
   );

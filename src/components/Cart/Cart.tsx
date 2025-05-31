@@ -40,7 +40,6 @@ interface CartItem {
 const Cart: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [subTotal, setSubTotal] = useState<number>(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,7 +47,6 @@ const Cart: React.FC = () => {
       try {
         const res = await getCartItems();
         setCartItems(res.data.cart.cartItems || []);
-        setSubTotal(res.data.cart.subTotal || 0);
         setSelectedItems(
           (res.data.cart.cartItems || [])
             .filter((item: any) => item.isSelected)
@@ -56,7 +54,6 @@ const Cart: React.FC = () => {
         );
       } catch {
         setCartItems([]);
-        setSubTotal(0);
         setSelectedItems([]);
       }
     };
@@ -77,7 +74,6 @@ const Cart: React.FC = () => {
       await cartApi.toggleCartItem(id);
       const res = await getCartItems();
       setCartItems(res.data.cart.cartItems || []);
-      setSubTotal(res.data.cart.subTotal || 0);
       setSelectedItems(
         (res.data.cart.cartItems || [])
           .filter((item: any) => item.isSelected)
@@ -91,12 +87,10 @@ const Cart: React.FC = () => {
     if (!item) return;
     const newQuantity = Math.max(1, item.quantity + delta);
     if (newQuantity === item.quantity) return;
-
     try {
       await cartApi.updateCartItemQuantity(id, newQuantity);
       const res = await getCartItems();
       setCartItems(res.data.cart.cartItems || []);
-      setSubTotal(res.data.cart.subTotal || 0);
       setSelectedItems(
         (res.data.cart.cartItems || [])
           .filter((item: any) => item.isSelected)
@@ -110,7 +104,6 @@ const Cart: React.FC = () => {
       await cartApi.removeCartItem();
       const res = await getCartItems();
       setCartItems(res.data.cart.cartItems || []);
-      setSubTotal(res.data.cart.subTotal || 0);
       setSelectedItems(
         (res.data.cart.cartItems || [])
           .filter((item: any) => item.isSelected)

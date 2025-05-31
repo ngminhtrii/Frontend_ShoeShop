@@ -122,15 +122,8 @@ const ProductPage = () => {
             </thead>
             <tbody>
               {products.map((product) => {
-                const {
-                  _id,
-                  name,
-                  category,
-                  brand,
-                  variantSummary,
-                  stockStatus,
-                } = product;
-                const priceRange = variantSummary?.priceRange;
+                const { _id, name, category, brand, stockStatus } = product;
+                // const priceRange = variantSummary?.priceRange;
 
                 return (
                   <tr key={_id}>
@@ -141,10 +134,14 @@ const ProductPage = () => {
                     </td>
                     <td className="py-2 px-4 border">
                       {typeof brand === "string" ? brand : brand?.name}
-                    </td>
+                    </td>{" "}
                     <td className="py-2 px-4 border">
-                      {priceRange?.min && priceRange?.max
-                        ? `${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()} VND`
+                      {product.variants?.length > 0
+                        ? `${Math.min(
+                            ...product.variants.map((v) => v.price)
+                          ).toLocaleString()} - ${Math.max(
+                            ...product.variants.map((v) => v.price)
+                          ).toLocaleString()} VND`
                         : "0 VND"}
                     </td>
                     <td className="py-2 px-4 border">

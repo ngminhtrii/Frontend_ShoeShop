@@ -1,12 +1,7 @@
-
-import Router from "./routers/Router"
-
+import Router from "./routers/Router";
 
 function App() {
-
-  return (
-   <Router/>
-  )
+  return <Router />;
 }
 
-export default App
+export default App;
