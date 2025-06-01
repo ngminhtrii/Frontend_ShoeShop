@@ -6,7 +6,12 @@ import {
   GrCart,
   GrSettingsOption,
 } from "react-icons/gr";
-import { FaRulerCombined, FaPalette, FaTrademark } from "react-icons/fa";
+import {
+  FaRulerCombined,
+  FaPalette,
+  FaTrademark,
+  FaGift,
+} from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FaChevronDown, FaBars } from "react-icons/fa";
@@ -65,9 +70,9 @@ const AdminSidebar = () => {
     { name: "Size", href: "/admin/size", icon: FaRulerCombined },
     { name: "Orders", href: "/admin/orders", icon: GrCart },
     {
-      name: "Discount",
+      name: "Coupon",
       href: "/admin/products/discount",
-      icon: FaRulerCombined,
+      icon: FaGift,
     },
     { name: "Settings", href: "/admin/settings", icon: GrSettingsOption },
   ];
