@@ -1,11 +1,18 @@
 import React from "react";
-import { FaUser, FaClipboardList, FaHeart, FaSignOutAlt } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import {
+  FaUser,
+  FaClipboardList,
+  FaHeart,
+  FaSignOutAlt,
+  FaStar,
+} from "react-icons/fa";
+import { useNavigate, useLocation } from "react-router-dom";
 import { authenticateApi } from "../../services/AuthenticationService";
 import Cookie from "js-cookie";
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -18,45 +25,62 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  // Menu items cho sidebar
+  const menuItems = [
+    {
+      path: "/user-information",
+      icon: <FaUser className="text-xl" />,
+      label: "Thông tin tài khoản",
+    },
+    {
+      path: "/user-manage-order",
+      icon: <FaClipboardList className="text-xl" />,
+      label: "Quản lý đơn hàng",
+    },
+    {
+      path: "/user-reviews",
+      icon: <FaStar className="text-xl" />,
+      label: "Đánh giá của tôi",
+    },
+    {
+      path: "/like-page",
+      icon: <FaHeart className="text-xl" />,
+      label: "Sản phẩm yêu thích",
+    },
+    {
+      path: "/logout",
+      icon: <FaSignOutAlt className="text-xl" />,
+      label: "Đăng xuất",
+      onClick: handleLogout,
+    },
+  ];
+
   return (
-    <div className="w-60 bg-white p-6 shadow-md">
+    <div className="w-64 bg-white shadow-lg rounded-lg p-5 self-start sticky top-24">
+      <div className="flex flex-col items-center mb-6 pt-3">
+        <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+          <FaUser className="text-4xl text-blue-500" />
+        </div>
+        <h3 className="text-lg font-bold">Tài khoản của tôi</h3>
+      </div>
+
       <nav>
-        <ul className="space-y-4">
-          {/* Mục Thông tin tài khoản */}
-          <li
-            className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-blue-500"
-            onClick={() => navigate("/user-information")}
-          >
-            <FaUser />
-            <span>Thông tin tài khoản</span>
-          </li>
-
-          {/* Mục Quản lý đơn hàng */}
-          <li
-            className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-blue-500"
-            onClick={() => navigate("/user-manage-order")}
-          >
-            <FaClipboardList />
-            <span>Quản lý đơn hàng</span>
-          </li>
-
-          {/* Mục Sản phẩm yêu thích */}
-          <li
-            className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-blue-500"
-            onClick={() => navigate("/like-page")}
-          >
-            <FaHeart />
-            <span>Sản phẩm yêu thích</span>
-          </li>
-
-          {/* Mục Đăng xuất */}
-          <li
-            className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-blue-500"
-            onClick={handleLogout}
-          >
-            <FaSignOutAlt />
-            <span>Đăng xuất</span>
-          </li>
+        <ul className="space-y-2">
+          {menuItems.map((item) => (
+            <li key={item.path}>
+              <button
+                className={`flex items-center w-full p-3 rounded-lg transition-colors duration-200 ${
+                  location.pathname === item.path
+                    ? "bg-blue-500 text-white font-medium shadow-md"
+                    : "text-gray-700 hover:bg-blue-50"
+                }`}
+                onClick={item.onClick || (() => navigate(item.path))}
+              >
+                <div className="mr-3">{item.icon}</div>
+                <span>{item.label}</span>
+              </button>
+            </li>
+          ))}
         </ul>
       </nav>
     </div>

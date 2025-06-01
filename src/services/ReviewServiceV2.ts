@@ -10,7 +10,15 @@ export interface Review {
       public_id: string;
     };
   };
-  product: string;
+  product: {
+    _id: string;
+    name: string;
+    slug: string;
+    images?: Array<{
+      url: string;
+      public_id: string;
+    }>;
+  };
   orderItem: string;
   rating: number;
   content: string;
@@ -39,6 +47,45 @@ export interface ReviewQuery {
   limit?: number;
   rating?: number;
   sort?: string;
+}
+
+// Update interface cho sản phẩm có thể đánh giá để khớp với API response
+export interface ReviewableProduct {
+  orderItemId: string;
+  orderId: string;
+  orderCode: string;
+  product: {
+    _id: string;
+    name: string;
+    images?: Array<{
+      url: string;
+      public_id: string;
+      isMain?: boolean;
+      displayOrder?: number;
+      _id: string;
+    }>;
+    slug: string;
+  };
+  variant: {
+    _id: string;
+    color: {
+      _id: string;
+      name: string;
+      code?: string | null;
+    };
+  };
+  size: {
+    _id: string;
+    value: number | string;
+    description?: string;
+  };
+  quantity: number;
+  price: number;
+  image: string;
+  deliveredAt: string;
+  canReview: boolean;
+  reviewExpiresAt: string | null;
+  daysLeftToReview: number;
 }
 
 export interface ApiResponse<T = any> {
@@ -93,7 +140,19 @@ export const reviewApi = {
   createReview: (
     data: CreateReviewData
   ): Promise<{ data: ApiResponse<Review> }> =>
-    axiosInstanceAuth.post("/api/v1/users/reviews", data),
+    axiosInstanceAuth.post("/api/v1/users/reviews", data).catch((error) => {
+      // Enhanced error handling
+      if (error.response) {
+        console.error("Review submission error:", error.response.data);
+        if (error.response.status === 400) {
+          throw new Error(
+            error.response.data.message ||
+              "Không thể đánh giá sản phẩm này. Vui lòng thử lại sau."
+          );
+        }
+      }
+      throw error;
+    }),
 
   // Cập nhật đánh giá theo reviewId
   updateReview: (
@@ -111,6 +170,11 @@ export const reviewApi = {
     reviewId: string
   ): Promise<{ data: ApiResponse<{ numberOfLikes: number }> }> =>
     axiosInstanceAuth.post(`/api/v1/users/reviews/${reviewId}/like`),
+
+  // Lấy danh sách sản phẩm có thể đánh giá (từ đơn hàng đã giao thành công)
+  getReviewableProducts: (): Promise<{
+    data: ApiResponse<ReviewableProduct[]>;
+  }> => axiosInstanceAuth.get("/api/v1/users/reviews/reviewable-products"),
 };
 
 export default reviewApi;

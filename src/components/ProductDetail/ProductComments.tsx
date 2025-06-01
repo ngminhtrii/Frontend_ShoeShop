@@ -22,6 +22,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
       setLoading(true);
       try {
         const res = await reviewApi.getReviewsByProduct(productId);
+        console.log("Reviews data:", res.data);
         setReviews(res.data.data || []);
       } catch (error) {
         console.error("Error fetching reviews:", error);
@@ -93,6 +94,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
     );
   }
 
+  // Hiển thị danh sách đánh giá
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       {/* Header Section */}
@@ -113,107 +115,98 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                 ).toFixed(1)
               : "0.0"}
           </span>
-          <div className="flex justify-end mt-2 space-x-1">
+          <div className="flex justify-end mt-1">
             {renderStars(
               reviews.length > 0
-                ? Math.round(
-                    reviews.reduce((sum, r) => sum + r.rating, 0) /
-                      reviews.length
-                  )
+                ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
                 : 0
             )}
           </div>
         </div>
       </div>
 
-      {/* Empty State */}
+      {/* Review List */}
       {reviews.length === 0 ? (
-        <div className="py-16 px-8 text-center bg-gray-50">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-5 shadow-sm">
-            <FaRegStar className="w-10 h-10 text-gray-300" />
-          </div>
-          <h4 className="text-xl font-semibold text-gray-800 mb-3">
+        <div className="p-8 text-center">
+          <FaRegStar className="mx-auto text-4xl text-gray-300 mb-3" />
+          <h3 className="text-xl font-medium text-gray-700 mb-2">
             Chưa có đánh giá nào
-          </h4>
-          <p className="text-gray-500 max-w-md mx-auto">
-            Hãy là người đầu tiên chia sẻ trải nghiệm về sản phẩm này!
+          </h3>
+          <p className="text-gray-500">
+            Hãy là người đầu tiên đánh giá sản phẩm này
           </p>
+          {isAuthenticated && (
+            <button
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              onClick={() => navigate("/user-reviews")}
+            >
+              Viết đánh giá
+            </button>
+          )}
         </div>
       ) : (
-        /* Reviews List */
         <div className="divide-y divide-gray-100">
           {reviews.map((review) => (
-            <div
-              key={review._id}
-              className="p-8 hover:bg-gray-50 transition-colors"
-            >
-              {/* User Info and Rating */}
-              <div className="flex justify-between mb-5">
-                <div className="flex items-start gap-4">
-                  {review.user?.avatar ? (
+            <div key={review._id} className="p-6">
+              <div className="flex items-start">
+                {/* Reviewer Avatar */}
+                <div className="flex-shrink-0 mr-4">
+                  {review.user.avatar?.url ? (
                     <img
                       src={review.user.avatar.url}
                       alt={review.user.name}
-                      className="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow-md"
+                      className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = "/image/avatar-placeholder.png";
+                      }}
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
-                      <FaUser className="text-white text-xl" />
+                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                      <FaUser className="text-gray-500" />
                     </div>
                   )}
-                  <div>
-                    <div className="font-bold text-gray-800 text-lg">
-                      {review.user?.name || "Khách hàng ẩn danh"}
-                    </div>
-                    <div className="flex items-center gap-3 mt-2">
-                      <div className="flex space-x-1">
-                        {renderStars(review.rating)}
-                      </div>
-                      <span className="text-sm bg-yellow-100 text-yellow-700 px-2.5 py-0.5 rounded-full font-medium">
-                        {review.rating}/5
+                </div>
+
+                {/* Review Content */}
+                <div className="flex-grow">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-800">
+                      {review.user.name}
+                    </h4>
+                    <span className="text-gray-500 text-sm">
+                      {new Date(review.createdAt).toLocaleDateString("vi-VN")}
+                    </span>
+                  </div>
+
+                  {/* Star Rating */}
+                  <div className="flex mt-1 mb-2">
+                    {renderStars(review.rating)}
+                  </div>
+
+                  <p className="text-gray-700 whitespace-pre-line">
+                    {review.content}
+                  </p>
+
+                  {/* Like Button */}
+                  <div className="mt-3 flex items-center">
+                    <button
+                      onClick={() => handleLikeReview(review._id)}
+                      disabled={likeLoading[review._id]}
+                      className={`flex items-center space-x-1 ${
+                        likedReviews[review._id]
+                          ? "text-red-500"
+                          : "text-gray-500 hover:text-red-500"
+                      } transition-colors disabled:opacity-50`}
+                    >
+                      {likedReviews[review._id] ? <FaHeart /> : <FaRegHeart />}
+                      <span className="text-sm">
+                        {review.numberOfLikes || 0} hữu ích
                       </span>
-                    </div>
+                    </button>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500 bg-gray-100 px-4 py-1.5 rounded-full font-medium">
-                  {new Date(review.createdAt).toLocaleDateString("vi-VN", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </div>
-              </div>
-
-              {/* Review Content */}
-              <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm mb-4">
-                <p className="text-gray-700 leading-relaxed">
-                  {review.content}
-                </p>
-              </div>
-
-              {/* Like Button */}
-              <div className="flex justify-end">
-                <button
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                    likedReviews[review._id]
-                      ? "bg-red-50 text-red-600 hover:bg-red-100"
-                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  }`}
-                  onClick={() => handleLikeReview(review._id)}
-                  disabled={likeLoading[review._id]}
-                >
-                  {likeLoading[review._id] ? (
-                    <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                  ) : likedReviews[review._id] ? (
-                    <FaHeart className="text-red-500" />
-                  ) : (
-                    <FaRegHeart />
-                  )}
-                  <span className="font-medium mr-1">
-                    {review.numberOfLikes || 0}
-                  </span>
-                  <span className="text-sm">Hữu ích</span>
-                </button>
               </div>
             </div>
           ))}

@@ -77,7 +77,7 @@ export interface Order {
     amount?: number;
     method?: string;
     updatedAt: string;
-    responseData?: any;
+    responseData?: Record<string, unknown>;
   }>;
   coupon?: {
     _id: string;
@@ -129,24 +129,22 @@ export interface CancelOrderData {
 export interface OrdersResponse {
   success: boolean;
   message: string;
-  data: {
-    orders: Order[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-      hasNext: boolean;
-      hasPrev: boolean;
-    };
-    stats: {
-      pending: number;
-      confirmed: number;
-      shipping: number;
-      delivered: number;
-      cancelled: number;
-      total: number;
-    };
+  orders: Order[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  stats: {
+    pending: number;
+    confirmed: number;
+    shipping: number;
+    delivered: number;
+    cancelled: number;
+    total: number;
   };
 }
 
@@ -211,6 +209,36 @@ export interface CancelRequestsResponse {
   };
 }
 
+export interface CancelOrderResponse {
+  success: boolean;
+  message: string;
+  data: {
+    message: string;
+    cancelRequest?: CancelRequest;
+  };
+}
+
+export interface ProcessCancelRequestResponse {
+  success: boolean;
+  message: string;
+  data: {
+    cancelRequest: CancelRequest;
+    order?: Order;
+  };
+}
+
+export interface VnpayResponse {
+  success: boolean;
+  message: string;
+  data: {
+    url?: string;
+    orderId?: string;
+    transactionId?: string;
+    status?: string;
+    [key: string]: unknown;
+  };
+}
+
 // User Order Service - các chức năng cho người dùng thường
 export const userOrderService = {
   // Lấy danh sách đơn hàng của người dùng với phân trang và filter
@@ -226,12 +254,11 @@ export const userOrderService = {
   // Lấy chi tiết đơn hàng
   getOrderById: (orderId: string): Promise<{ data: OrderDetailResponse }> =>
     axiosInstanceAuth.get(`/api/v1/orders/${orderId}`),
-
   // Gửi yêu cầu hủy đơn hàng
   cancelOrder: (
     orderId: string,
     data: CancelOrderData
-  ): Promise<{ data: any }> =>
+  ): Promise<{ data: CancelOrderResponse }> =>
     axiosInstanceAuth.post(`/api/v1/orders/${orderId}/cancel`, data),
 
   // Lấy danh sách yêu cầu hủy đơn hàng của user
@@ -256,7 +283,6 @@ export const adminOrderService = {
   // Lấy chi tiết đơn hàng (admin)
   getOrderDetail: (orderId: string): Promise<{ data: OrderDetailResponse }> =>
     axiosInstanceAuth.get(`/api/v1/admin/orders/${orderId}`),
-
   // Cập nhật trạng thái đơn hàng
   updateOrderStatus: (
     orderId: string,
@@ -264,7 +290,7 @@ export const adminOrderService = {
       status: "confirmed" | "shipping" | "delivered";
       note?: string;
     }
-  ): Promise<{ data: any }> =>
+  ): Promise<{ data: { success: boolean; message: string; order: Order } }> =>
     axiosInstanceAuth.patch(`/api/v1/admin/orders/${orderId}/status`, data),
 
   // Lấy danh sách yêu cầu hủy đơn hàng
@@ -274,7 +300,6 @@ export const adminOrderService = {
     status?: "pending" | "approved" | "rejected";
   }): Promise<{ data: CancelRequestsResponse }> =>
     axiosInstanceAuth.get("/api/v1/admin/orders/cancel-requests", { params }),
-
   // Xử lý yêu cầu hủy đơn hàng
   processCancelRequest: (
     requestId: string,
@@ -282,7 +307,7 @@ export const adminOrderService = {
       status: "approved" | "rejected";
       adminResponse?: string;
     }
-  ): Promise<{ data: any }> =>
+  ): Promise<{ data: ProcessCancelRequestResponse }> =>
     axiosInstanceAuth.patch(
       `/api/v1/admin/orders/cancel-requests/${requestId}`,
       data
@@ -292,15 +317,17 @@ export const adminOrderService = {
 // Payment Service - xử lý thanh toán VNPAY
 export const paymentService = {
   // Xử lý callback từ VNPAY
-  vnpayCallback: (params: VnpayCallbackParams): Promise<{ data: any }> =>
+  vnpayCallback: (
+    params: VnpayCallbackParams
+  ): Promise<{ data: VnpayResponse }> =>
     axiosInstance.get("/api/v1/orders/vnpay/callback", { params }),
 
   // Xử lý IPN từ VNPAY
-  vnpayIpn: (data: VnpayCallbackParams): Promise<{ data: any }> =>
+  vnpayIpn: (data: VnpayCallbackParams): Promise<{ data: VnpayResponse }> =>
     axiosInstance.post("/api/v1/orders/vnpay/ipn", data),
 
   // Test callback từ VNPAY
-  testVnpayCallback: (): Promise<{ data: any }> =>
+  testVnpayCallback: (): Promise<{ data: VnpayResponse }> =>
     axiosInstance.get("/api/v1/orders/vnpay/test-callback"),
 };
 
