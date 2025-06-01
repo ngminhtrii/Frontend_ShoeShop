@@ -17,6 +17,7 @@ const ResetPasswordPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string>("");
 
   useEffect(() => {
     if (!token) {
@@ -64,14 +65,51 @@ const ResetPasswordPage: React.FC = () => {
         [name]: "",
       }));
     }
+
+    // Clear server error when user tries again
+    if (serverError) {
+      setServerError("");
+    }
+
+    // Validate password confirmation in real-time
+    if (name === "confirmPassword" && formData.password && value) {
+      if (formData.password !== value) {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "Mật khẩu xác nhận không khớp",
+        }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "",
+        }));
+      }
+    }
+
+    // If the password field changes, validate the confirmation field if it has a value
+    if (name === "password" && formData.confirmPassword) {
+      if (value !== formData.confirmPassword) {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "Mật khẩu xác nhận không khớp",
+        }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "",
+        }));
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setServerError("");
 
-    // Validate form
+    // Kiểm tra cơ bản ở client
     const newErrors: Record<string, string> = {};
 
+    // Password validation
     if (!formData.password) {
       newErrors.password = "Vui lòng nhập mật khẩu mới";
     } else {
@@ -81,9 +119,11 @@ const ResetPasswordPage: React.FC = () => {
       }
     }
 
+    // Confirmation validation
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
     } else if (formData.password !== formData.confirmPassword) {
+      // Ensure exact string comparison
       newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
     }
 
@@ -99,15 +139,48 @@ const ResetPasswordPage: React.FC = () => {
 
     setLoading(true);
     try {
-      await resetPassword(token, formData.password);
+      // Trim passwords to ensure no whitespace issues
+      const trimmedPassword = formData.password.trim();
+      const trimmedConfirmPassword = formData.confirmPassword.trim();
+
+      // Pass both password and confirmPassword to the resetPassword function
+      await resetPassword(token, trimmedPassword, trimmedConfirmPassword);
       toast.success("Đặt lại mật khẩu thành công!");
-      navigate("/login");
+
+      // Chuyển hướng sau khi đặt lại mật khẩu thành công
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (error: any) {
       console.error("Reset password error:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Đặt lại mật khẩu thất bại";
+
+      // Xử lý thông báo lỗi chi tiết từ backend
+      let errorMessage = "Đặt lại mật khẩu thất bại";
+
+      if (
+        error.response?.data?.errors &&
+        error.response.data.errors.length > 0
+      ) {
+        // Nếu là lỗi validation từ validator của backend
+        errorMessage = error.response.data.errors[0].msg;
+
+        // Xử lý riêng cho lỗi mật khẩu không khớp
+        if (errorMessage.includes("không khớp")) {
+          setErrors({
+            confirmPassword: errorMessage,
+          });
+        } else {
+          setServerError(errorMessage);
+        }
+      } else if (error.response?.data?.message) {
+        // Nếu là lỗi khác từ API
+        errorMessage = error.response.data.message;
+        setServerError(errorMessage);
+      } else if (error.message) {
+        errorMessage = error.message;
+        setServerError(errorMessage);
+      }
+
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -130,6 +203,33 @@ const ResetPasswordPage: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {/* Hiển thị lỗi chung từ server */}
+          {serverError && (
+            <div className="mb-4 bg-red-50 p-4 rounded-md">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    {serverError}
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* New Password */}
             <div>

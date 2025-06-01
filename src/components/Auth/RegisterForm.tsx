@@ -42,7 +42,20 @@ const RegisterForm: React.FC = () => {
         navigate("/otp-verification"); // Điều hướng đến trang xác thực OTP
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Đăng ký thất bại!");
+      // Xử lý thông báo lỗi chi tiết từ backend
+      let errorMessage = "Đăng ký thất bại!";
+
+      if (
+        error.response?.data?.errors &&
+        error.response.data.errors.length > 0
+      ) {
+        // Lấy thông báo lỗi đầu tiên từ validation error
+        errorMessage = error.response.data.errors[0].msg;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

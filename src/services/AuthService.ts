@@ -23,6 +23,7 @@ export interface ForgotPasswordRequest {
 export interface ResetPasswordRequest {
   resetToken: string;
   password: string;
+  confirmPassword: string;
 }
 
 export interface User {
@@ -39,11 +40,16 @@ export interface User {
 export const authApi = {
   // Đăng nhập
   login: async (email: string, password: string) => {
-    const response = await axiosInstance.post("/api/v1/auth/login", {
-      email,
-      password,
-    });
-    return response.data;
+    try {
+      const response = await axiosInstance.post("/api/v1/auth/login", {
+        email,
+        password,
+      });
+      return response.data;
+    } catch (error) {
+      // Đảm bảo lỗi được truyền ra ngoài đầy đủ
+      throw error;
+    }
   },
 
   // Đăng ký
@@ -67,8 +73,16 @@ export const authApi = {
   },
 
   // Reset mật khẩu
-  resetPassword: async (data: ResetPasswordRequest) => {
-    return axiosInstance.post("/api/v1/auth/reset-password", data);
+  resetPassword: async (
+    resetToken: string,
+    password: string,
+    confirmPassword: string
+  ) => {
+    return axiosInstance.post("/api/v1/auth/reset-password", {
+      resetToken,
+      password,
+      confirmPassword,
+    });
   },
 
   // Refresh token

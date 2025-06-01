@@ -30,17 +30,27 @@ const LoginForm: React.FC = () => {
     } catch (error: any) {
       console.error("🚨 Đăng nhập thất bại:", error);
 
-      // Chỉ hiển thị lỗi nếu không phải lỗi 401 (đã được interceptor xử lý)
-      if (error.response?.status !== 401) {
-        let errorMessage = "Đăng nhập thất bại!";
-        if (error.response?.data?.message) {
-          errorMessage = error.response.data.message;
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
+      // Hiển thị thông báo lỗi từ backend
+      let errorMessage = "Đăng nhập thất bại!";
 
-        toast.error(errorMessage);
+      // Trường hợp lỗi validation từ backend
+      if (
+        error.response?.data?.errors &&
+        error.response.data.errors.length > 0
+      ) {
+        // Lấy thông báo lỗi đầu tiên
+        errorMessage = error.response.data.errors[0].msg;
       }
+      // Trường hợp lỗi thông thường
+      else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      // Trường hợp lỗi từ axios
+      else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
     }
   };
 

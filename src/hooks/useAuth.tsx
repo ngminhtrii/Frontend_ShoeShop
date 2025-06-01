@@ -20,7 +20,11 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<any>;
   verifyOTP: (email: string, otp: string) => Promise<any>;
   forgotPassword: (email: string) => Promise<any>;
-  resetPassword: (resetToken: string, password: string) => Promise<any>;
+  resetPassword: (
+    resetToken: string,
+    password: string,
+    confirmPassword: string
+  ) => Promise<any>;
   refreshUser: () => Promise<void>;
 }
 
@@ -66,6 +70,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     checkAuthStatus();
   }, []);
+
+  // Hàm tiện ích xử lý lỗi từ API
+  const handleApiError = (error: any): string => {
+    if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+      return error.response.data.errors[0].msg;
+    } else if (error.response?.data?.message) {
+      return error.response.data.message;
+    } else if (error.message) {
+      return error.message;
+    }
+    return "Có lỗi xảy ra";
+  };
 
   // Login function
   const login = async (email: string, password: string) => {
@@ -147,12 +163,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Reset password function
-  const resetPassword = async (resetToken: string, password: string) => {
+  const resetPassword = async (
+    resetToken: string,
+    password: string,
+    confirmPassword: string
+  ) => {
     try {
-      const response = await authApi.resetPassword({
+      const response = await authApi.resetPassword(
         resetToken,
         password,
-      });
+        confirmPassword
+      );
       return response.data;
     } catch (error) {
       throw error;
@@ -183,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     forgotPassword,
     resetPassword,
     refreshUser,
+    handleApiError, // Thêm hàm xử lý lỗi cho components khác sử dụng
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
