@@ -102,31 +102,38 @@ const VariantPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Danh Sách Biến Thể Sản Phẩm</h2>
-      <div className="flex gap-4 mb-4">
+    <div className="p-6 w-full font-sans">
+      <h2 className="text-3xl font-bold text-gray-800 tracking-tight leading-snug mb-6">
+        Danh Sách Biến Thể Sản Phẩm
+      </h2>
+      {/* Tab chuyển đổi */}
+      <div className="flex border-b mb-4">
         <button
-          className={`px-4 py-2 rounded ${
-            !showDeleted ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
           onClick={() => setShowDeleted(false)}
+          className={`px-4 py-2 font-medium transition border-b-2 -mb-px ${
+            !showDeleted
+              ? "text-blue-600 border-blue-600"
+              : "text-gray-500 border-transparent hover:text-blue-600"
+          }`}
         >
           Biến thể đang hoạt động
         </button>
         <button
-          className={`px-4 py-2 rounded ${
-            showDeleted ? "bg-red-600 text-white" : "bg-gray-200"
-          }`}
           onClick={() => setShowDeleted(true)}
+          className={`px-4 py-2 font-medium transition border-b-2 -mb-px ${
+            showDeleted
+              ? "text-blue-600 border-blue-600"
+              : "text-gray-500 border-transparent hover:text-blue-600"
+          }`}
         >
           Biến thể đã xóa
         </button>
         {!showDeleted && (
           <button
-            className="ml-auto px-4 py-2 bg-green-600 text-white rounded"
+            className="ml-auto px-4 py-2 bg-slate-500 text-white rounded-3xl font-medium"
             onClick={handleAddNew}
           >
-            Thêm mới
+            Thêm Biến Thể
           </button>
         )}
       </div>
@@ -152,102 +159,148 @@ const VariantPage: React.FC = () => {
       {loading ? (
         <p>Đang tải...</p>
       ) : (
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-2 py-1">ID</th>
-              <th className="border px-2 py-1">Sản phẩm</th>
-              <th className="border px-2 py-1">Màu</th>
-              <th className="border px-2 py-1">Giá</th>
-              <th className="border px-2 py-1">Giới tính</th>
-              <th className="border px-2 py-1">Size:Số lượng</th>
-              <th className="border px-2 py-1">Trạng thái</th>
-              <th className="border px-2 py-1">Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(showDeleted ? deletedVariants : variants).map((v) => (
-              <tr key={v._id}>
-                <td className="border px-2 py-1">{v._id}</td>
-                <td className="border px-2 py-1">
-                  {v.product?.name || v.product}
-                </td>
-                <td className="border px-2 py-1">{v.color?.name || v.color}</td>
-                <td className="border px-2 py-1">
-                  {v.price?.toLocaleString()}đ
-                </td>
-                <td className="border px-2 py-1">{v.gender}</td>
-                <td className="border px-2 py-1">
-                  {v.sizes?.map((s: any) => (
-                    <span
-                      key={s.size?._id || s.size}
-                      className="inline-block mr-2"
-                    >
-                      {s.size?.value || s.size}: {s.quantity}
-                    </span>
-                  ))}
-                </td>
-                <td className="border px-2 py-1">
-                  {v.deletedAt ? (
-                    <span className="text-red-500">Đã xóa</span>
-                  ) : v.isActive ? (
-                    <span className="text-green-600">Hoạt động</span>
-                  ) : (
-                    <span className="text-yellow-600">Ngừng hoạt động</span>
-                  )}
-                </td>
-                <td className="border px-2 py-1 space-x-2">
-                  {!showDeleted && (
-                    <>
-                      <button
-                        className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
-                        onClick={() => handleEdit(v)}
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        className={`px-2 py-1 rounded text-xs ${
-                          v.isActive
-                            ? "bg-yellow-500 text-white"
-                            : "bg-gray-400 text-white"
-                        }`}
-                        onClick={async () => {
-                          await variantApi.updateStatus(v._id, !v.isActive);
-                          fetchVariants();
-                        }}
-                      >
-                        {v.isActive ? "Tắt hoạt động" : "Kích hoạt"}
-                      </button>
-                      {!v.deletedAt ? (
-                        <button
-                          className="px-2 py-1 bg-red-500 text-white rounded text-xs"
-                          onClick={() => handleDelete(v._id)}
-                        >
-                          Xóa
-                        </button>
-                      ) : null}
-                      {/* Nút quản lý ảnh */}
-                      <button
-                        className="px-2 py-1 bg-purple-500 text-white rounded text-xs"
-                        onClick={() => handleOpenImageManager(v)}
-                      >
-                        Ảnh
-                      </button>
-                    </>
-                  )}
-                  {showDeleted && (
-                    <button
-                      className="px-2 py-1 bg-green-500 text-white rounded text-xs"
-                      onClick={() => handleRestore(v._id)}
-                    >
-                      Khôi phục
-                    </button>
-                  )}
-                </td>
+        <div className="overflow-x-auto shadow rounded-lg">
+          <table className="min-w-full w-full bg-white rounded-md overflow-hidden border font-sans">
+            <thead className="bg-gray-50 text-gray-700 text-sm font-semibold uppercase">
+              <tr>
+                <th className="py-3 px-4 text-left border-b">ID</th>
+                <th className="py-3 px-4 text-left border-b">Sản phẩm</th>
+                <th className="py-3 px-4 text-left border-b">Màu</th>
+                <th className="py-3 px-4 text-left border-b">Giá</th>
+                <th className="py-3 px-4 text-left border-b">Giới tính</th>
+                <th className="py-3 px-4 text-left border-b">Size: Số lượng</th>
+                <th className="py-3 px-4 text-center border-b">Trạng thái</th>
+                <th className="py-3 px-4 text-center border-b">Hành động</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(showDeleted ? deletedVariants : variants).map((v) => (
+                <tr key={v._id} className="hover:bg-gray-50 border-t">
+                  <td className="px-4 py-3 text-sm">{v._id}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {v.product?.name || v.product}
+                  </td>
+                  <td className="px-4 py-3 text-sm flex items-center gap-2">
+                    {v.color?.name || v.color}
+                    {v.color?.colors?.length > 0 && (
+                      <span className="flex gap-1">
+                        {v.color.colors.length === 1 ? (
+                          <span
+                            className="inline-block w-6 h-6 rounded-full border"
+                            style={{
+                              background:
+                                v.color.colors[0] ||
+                                "#e5e7eb" /* fallback gray-200 */,
+                            }}
+                            title={v.color.colors[0]}
+                          ></span>
+                        ) : v.color.colors.length === 2 ? (
+                          <span
+                            className="inline-block w-6 h-6 rounded-full border"
+                            style={{
+                              background: `linear-gradient(90deg, ${v.color.colors[0]} 50%, ${v.color.colors[1]} 50%)`,
+                            }}
+                            title={v.color.colors.join(" / ")}
+                          ></span>
+                        ) : (
+                          <span
+                            className="inline-block w-6 h-6 rounded-full border"
+                            style={{
+                              background: `linear-gradient(90deg, ${v.color.colors
+                                .map((c: string, i: number, arr: string[]) => {
+                                  const percent = Math.round(
+                                    (100 / arr.length) * (i + 1)
+                                  );
+                                  return `${c} ${percent}%`;
+                                })
+                                .join(", ")})`,
+                            }}
+                            title={v.color.colors.join(" / ")}
+                          ></span>
+                        )}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {v.price?.toLocaleString()}đ
+                  </td>
+                  <td className="px-4 py-3 text-sm">{v.gender}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {v.sizes?.map((s: any) => (
+                      <span
+                        key={s.size?._id || s.size}
+                        className="inline-block mr-2"
+                      >
+                        {s.size?.value || s.size}: {s.quantity}
+                      </span>
+                    ))}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {v.deletedAt ? (
+                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+                        Đã xóa
+                      </span>
+                    ) : v.isActive ? (
+                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+                        Hoạt động
+                      </span>
+                    ) : (
+                      <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">
+                        Ngừng hoạt động
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 flex gap-2 justify-center">
+                    {!showDeleted ? (
+                      <>
+                        <button
+                          className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
+                          onClick={() => handleEdit(v)}
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          className={`px-2 py-1 rounded text-xs ${
+                            v.isActive
+                              ? "bg-yellow-500 text-white"
+                              : "bg-gray-400 text-white"
+                          }`}
+                          onClick={async () => {
+                            await variantApi.updateStatus(v._id, !v.isActive);
+                            fetchVariants();
+                          }}
+                        >
+                          {v.isActive ? "Tắt hoạt động" : "Kích hoạt"}
+                        </button>
+                        {!v.deletedAt ? (
+                          <button
+                            className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
+                            onClick={() => handleDelete(v._id)}
+                          >
+                            Xóa
+                          </button>
+                        ) : null}
+                        <button
+                          className="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs"
+                          onClick={() => handleOpenImageManager(v)}
+                        >
+                          Ảnh
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
+                        onClick={() => handleRestore(v._id)}
+                      >
+                        Khôi phục
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {/* Modal quản lý ảnh variant */}
       {showImageManager && (
@@ -266,7 +319,6 @@ const VariantPage: React.FC = () => {
                 // Gọi lại API lấy variant theo id
                 const res = await variantApi.getVariantById(showImageManager);
                 setVariantImages(res.data.variant.imagesvariant || []);
-                // Nếu muốn cập nhật lại bảng, gọi fetchVariants();
               }}
             />
           </div>

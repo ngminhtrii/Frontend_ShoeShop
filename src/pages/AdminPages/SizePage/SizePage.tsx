@@ -179,49 +179,52 @@ const SizePage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Danh sách kích thước</h2>
-
-      {/* Search Bar */}
-      <div className="mb-4 flex items-center">
-        {!isSearchVisible && (
+    <div className="p-6 w-full font-sans">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-3xl font-bold text-gray-800 tracking-tight leading-snug">
+          Danh Sách Kích Thước
+        </h2>
+        {!isSearchVisible ? (
           <button
             onClick={toggleSearchVisibility}
-            className="bg-sky-600/60 text-white px-3 py-2 rounded-md hover:bg-sky-600"
+            className="flex items-center gap-2 border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 px-5 py-2 rounded-3xl shadow transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-blue-300 active:bg-gray-200"
           >
-            <IoIosSearch className="inline-block mr-2" />
-            Tìm kiếm
+            <IoIosSearch className="text-xl text-gray-500" />
+            <span className="font-medium">Tìm kiếm</span>
           </button>
-        )}
-        {isSearchVisible && (
-          <div className="mb-4 flex items-center w-1/3">
+        ) : (
+          <div className="flex items-center space-x-2 w-full max-w-md">
             <IoIosSearch
               onClick={handleBack}
-              className="text-gray-400 cursor-pointer mr-2"
+              className="text-gray-400 cursor-pointer text-xl"
             />
             <input
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Nhập kích thước hoặc mô tả"
-              className="px-4 py-2 w-full border rounded-md"
+              className="w-full px-4 py-2 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
         )}
       </div>
-      {/* Toggle Deleted/Active Sizes */}
-      <div className="flex gap-4 mb-4">
+      {/* Tab chuyển đổi */}
+      <div className="flex border-b mb-4">
         <button
-          className={`px-4 py-2 rounded ${
-            !showDeleted ? "bg-blue-600 text-white" : "bg-gray-200"
+          className={`px-4 py-2 font-medium transition border-b-2 -mb-px ${
+            !showDeleted
+              ? "text-blue-600 border-blue-600"
+              : "text-gray-500 border-transparent hover:text-blue-600"
           }`}
           onClick={() => setShowDeleted(false)}
         >
           Size đang hoạt động
         </button>
         <button
-          className={`px-4 py-2 rounded ${
-            showDeleted ? "bg-red-600 text-white" : "bg-gray-200"
+          className={`px-4 py-2 font-medium transition border-b-2 -mb-px ${
+            showDeleted
+              ? "text-blue-600 border-blue-600"
+              : "text-gray-500 border-transparent hover:text-blue-600"
           }`}
           onClick={() => setShowDeleted(true)}
         >
@@ -229,10 +232,10 @@ const SizePage: React.FC = () => {
         </button>
         {!showDeleted && (
           <button
-            className="ml-auto px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
+            className="ml-auto px-4 py-2 bg-slate-500 text-white rounded-3xl font-medium"
             onClick={() => setShowAddSize(true)}
           >
-            + Thêm Kích Thước
+            Thêm Kích Thước
           </button>
         )}
       </div>
@@ -252,71 +255,68 @@ const SizePage: React.FC = () => {
         />
       )}
       {/* Sizes Table */}
-      <table className="min-w-full table-auto border-collapse bg-white shadow-lg rounded-lg">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              ID
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Giá Trị
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Mô Tả
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Trạng Thái
-            </th>
-            <th className="py-2 px-4 border-b text-left text-sm font-medium">
-              Thao Tác
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredSizes.map((size) => (
-            <tr key={size._id} className="hover:bg-gray-50">
-              <td className="py-2 px-4 border-b text-sm">{size._id}</td>
-              <td className="py-2 px-4 border-b text-sm">{size.value}</td>
-              <td className="py-2 px-4 border-b text-sm">{size.description}</td>
-              <td className="py-2 px-4 border-b text-sm">
-                {size.deletedAt
-                  ? `Đã xóa bởi ${
-                      typeof size.deletedBy === "object"
-                        ? size.deletedBy?.name || "N/A"
-                        : "N/A"
-                    }`
-                  : "Hoạt động"}
-              </td>
-              <td className="py-2 px-4 border-b text-sm">
-                {!showDeleted && (
-                  <>
-                    <button
-                      onClick={() => setEditingSize(size)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-md mr-2"
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      onClick={() => handleDeleteSize(size._id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md"
-                    >
-                      Xoá
-                    </button>
-                  </>
-                )}
-                {showDeleted && (
-                  <button
-                    onClick={() => handleRestoreSize(size._id)}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded-md"
-                  >
-                    Khôi phục
-                  </button>
-                )}
-              </td>
+      <div className="overflow-x-auto shadow rounded-lg">
+        <table className="min-w-full bg-white rounded-md overflow-hidden border">
+          <thead className="bg-gray-50 text-gray-700 text-sm font-semibold uppercase">
+            <tr>
+              <th className="py-3 px-4 text-left border-b">ID</th>
+              <th className="py-3 px-4 text-left border-b">Giá Trị</th>
+              <th className="py-3 px-4 text-left border-b">Mô Tả</th>
+              <th className="py-3 px-4 text-center border-b">Trạng Thái</th>
+              <th className="py-3 px-4 text-center border-b">Thao Tác</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredSizes.map((size) => (
+              <tr key={size._id} className="hover:bg-gray-50 border-t">
+                <td className="py-2 px-4 border-b text-sm">{size._id}</td>
+                <td className="py-2 px-4 border-b text-sm">{size.value}</td>
+                <td className="py-2 px-4 border-b text-sm">
+                  {size.description}
+                </td>
+                <td className="py-2 px-4 border-b text-center text-sm">
+                  {size.deletedAt ? (
+                    <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+                      Đã xóa
+                    </span>
+                  ) : (
+                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+                      Hoạt động
+                    </span>
+                  )}
+                </td>
+                <td className="py-2 px-4 border-b text-center text-sm">
+                  <div className="flex flex-col gap-2 min-w-[120px]">
+                    {!showDeleted ? (
+                      <>
+                        <button
+                          onClick={() => setEditingSize(size)}
+                          className="inline-flex items-center justify-center bg-gray-400 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-sm transition-all"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSize(size._id)}
+                          className="inline-flex items-center justify-center bg-gray-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded-full shadow-sm transition-all"
+                        >
+                          Xóa
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleRestoreSize(size._id)}
+                        className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded-full shadow-sm transition-all"
+                      >
+                        Khôi phục
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

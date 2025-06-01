@@ -27,17 +27,16 @@ const VariantForm: React.FC<VariantFormProps> = ({
   const [products, setProducts] = useState<any[]>([]);
   const [colors, setColors] = useState<any[]>([]);
   const [sizesList, setSizesList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Lấy danh sách sản phẩm
     productApi.getAll({ limit: 100 }).then((res) => {
       setProducts(res.data.data || []);
     });
-    // Lấy danh sách màu
     colorApi.getAll().then((res) => {
       setColors(res.data.data || []);
     });
-    // Lấy danh sách size
     sizeApi.getAll({ limit: 100 }).then((res) => {
       setSizesList(res.data.data || []);
     });
@@ -68,6 +67,7 @@ const VariantForm: React.FC<VariantFormProps> = ({
         sizes: [{ size: "", quantity: "" }],
       });
     }
+    setError(null);
   }, [editingVariant]);
 
   const handleChange = (
@@ -103,151 +103,188 @@ const VariantForm: React.FC<VariantFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingVariant) {
-      await variantApi.updateVariant(editingVariant._id, form);
-    } else {
-      await variantApi.createVariant(form);
+    setLoading(true);
+    setError(null);
+    try {
+      if (editingVariant) {
+        await variantApi.updateVariant(editingVariant._id, form);
+      } else {
+        await variantApi.createVariant(form);
+      }
+      onSuccess();
+      setForm({
+        product: "",
+        color: "",
+        price: "",
+        costPrice: "",
+        percentDiscount: "",
+        gender: "",
+        sizes: [{ size: "", quantity: "" }],
+      });
+    } catch {
+      setError("Có lỗi xảy ra, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
-    onSuccess();
-    setForm({
-      product: "",
-      color: "",
-      price: "",
-      costPrice: "",
-      percentDiscount: "",
-      gender: "",
-      sizes: [{ size: "", quantity: "" }],
-    });
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-gray-50 p-4 rounded mb-4 space-y-2"
-    >
-      <div className="flex gap-2">
-        {/* Chọn sản phẩm */}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-black">Sản phẩm</label>
         <select
           name="product"
           value={form.product}
           onChange={handleChange}
-          className="border px-2 py-1 rounded w-1/4"
           required
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         >
-          <option value="">Chọn sản phẩm</option>
+          <option value="">-- Chọn sản phẩm --</option>
           {products.map((p) => (
             <option key={p._id} value={p._id}>
               {p._id} - {p.name}
             </option>
           ))}
         </select>
-        {/* Chọn màu */}
+      </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-black">Màu sắc</label>
         <select
           name="color"
           value={form.color}
           onChange={handleChange}
-          className="border px-2 py-1 rounded w-1/4"
           required
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         >
-          <option value="">Chọn màu</option>
+          <option value="">-- Chọn màu --</option>
           {colors.map((c) => (
             <option key={c._id} value={c._id}>
               {c._id} - {c.name}
             </option>
           ))}
         </select>
-        <input
-          name="price"
-          value={form.price}
-          onChange={handleChange}
-          placeholder="Giá"
-          type="number"
-          className="border px-2 py-1 rounded w-1/6"
-          required
-        />
-        <input
-          name="costPrice"
-          value={form.costPrice}
-          onChange={handleChange}
-          placeholder="Giá vốn"
-          type="number"
-          className="border px-2 py-1 rounded w-1/6"
-        />
-        <input
-          name="percentDiscount"
-          value={form.percentDiscount}
-          onChange={handleChange}
-          placeholder="% giảm"
-          type="number"
-          className="border px-2 py-1 rounded w-1/6"
-        />
+      </div>
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-black">
+            Giá bán
+          </label>
+          <input
+            name="price"
+            value={form.price}
+            onChange={handleChange}
+            placeholder="Giá"
+            type="number"
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-black">
+            Giá vốn
+          </label>
+          <input
+            name="costPrice"
+            value={form.costPrice}
+            onChange={handleChange}
+            placeholder="Giá vốn"
+            type="number"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-black">
+            % Giảm giá
+          </label>
+          <input
+            name="percentDiscount"
+            value={form.percentDiscount}
+            onChange={handleChange}
+            placeholder="% giảm"
+            type="number"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+      </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-black">
+          Giới tính
+        </label>
         <select
           name="gender"
           value={form.gender}
           onChange={handleChange}
-          className="border px-2 py-1 rounded w-1/6"
           required
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         >
-          <option value="">Giới tính</option>
+          <option value="">-- Chọn giới tính --</option>
           <option value="male">Nam</option>
           <option value="female">Nữ</option>
-          <option value="unisex">Unisex</option>
         </select>
       </div>
-      <div>
-        <b>Sizes:</b>
-        {form.sizes.map((s: any, idx: number) => (
-          <div key={idx} className="flex gap-2 mt-1">
-            {/* Chọn size */}
-            <select
-              name="sizes.size"
-              value={s.size}
-              onChange={(e) => handleChange(e, idx)}
-              className="border px-2 py-1 rounded w-1/3"
-              required
-            >
-              <option value="">Chọn size</option>
-              {sizesList.map((sz) => (
-                <option key={sz._id} value={sz._id}>
-                  {sz._id} - {sz.value}
-                </option>
-              ))}
-            </select>
-            <input
-              name="sizes.quantity"
-              value={s.quantity}
-              onChange={(e) => handleChange(e, idx)}
-              placeholder="Số lượng"
-              type="number"
-              className="border px-2 py-1 rounded w-1/3"
-              required
-            />
-            {form.sizes.length > 1 && (
-              <button
-                type="button"
-                className="bg-red-400 text-white px-2 rounded"
-                onClick={() => handleRemoveSize(idx)}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-black">
+          Size & Số lượng
+        </label>
+        <div className="space-y-2">
+          {form.sizes.map((s: any, idx: number) => (
+            <div key={idx} className="flex gap-2">
+              <select
+                name="sizes.size"
+                value={s.size}
+                onChange={(e) => handleChange(e, idx)}
+                className="block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required
               >
-                X
-              </button>
-            )}
-          </div>
-        ))}
+                <option value="">Chọn size</option>
+                {sizesList.map((sz) => (
+                  <option key={sz._id} value={sz._id}>
+                    {sz._id} - {sz.value}
+                  </option>
+                ))}
+              </select>
+              <input
+                name="sizes.quantity"
+                value={s.quantity}
+                onChange={(e) => handleChange(e, idx)}
+                placeholder="Số lượng"
+                type="number"
+                className="block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required
+              />
+              {form.sizes.length > 1 && (
+                <button
+                  type="button"
+                  className="bg-red-400 text-white px-2 rounded"
+                  onClick={() => handleRemoveSize(idx)}
+                  title="Xóa size"
+                >
+                  X
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+            onClick={handleAddSize}
+          >
+            Thêm size
+          </button>
+        </div>
+      </div>
+      {error && <div className="text-red-500 text-sm">{error}</div>}
+      <div className="flex justify-end">
         <button
-          type="button"
-          className="mt-2 bg-blue-400 text-white px-2 rounded"
-          onClick={handleAddSize}
+          type="submit"
+          disabled={loading}
+          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
         >
-          Thêm size
+          {loading ? "Đang lưu..." : editingVariant ? "Cập nhật" : "Thêm"}
         </button>
       </div>
-      <button
-        type="submit"
-        className="bg-green-600 text-white px-4 py-2 rounded font-bold"
-      >
-        {editingVariant ? "Cập nhật" : "Thêm mới"}
-      </button>
     </form>
   );
 };
+
 export default VariantForm;
