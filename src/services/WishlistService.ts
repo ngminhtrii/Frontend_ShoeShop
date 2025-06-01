@@ -1,104 +1,49 @@
 import { axiosInstanceAuth } from "../utils/axiosIntance";
 
 export interface WishlistProduct {
-  _id: string;
-  name: string;
-  slug: string;
-  description: string;
-  images: Array<{
-    url: string;
-    public_id: string;
-    isMain: boolean;
-    displayOrder: number;
-  }>;
-  brand: {
+  _id: string; // wishlist item id
+  product: {
     _id: string;
     name: string;
-    logo?: {
-      url: string;
-      public_id: string;
-    };
+    images: { url: string }[];
+    price?: number;
   };
-  category: {
+  variant?: {
     _id: string;
-    name: string;
+    price: number;
+    priceFinal: number;
+    percentDiscount: number;
   };
-  rating: number;
-  numReviews: number;
-  totalQuantity: number;
-  stockStatus: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  variantSummary?: {
-    priceRange: {
-      min: number;
-      max: number;
-      isSinglePrice: boolean;
-    };
-    discount: {
-      hasDiscount: boolean;
-      maxPercent: number;
-    };
-  };
-}
-
-export interface WishlistItem {
-  _id: string;
-  product: WishlistProduct;
-  variant?: any;
   addedAt: string;
 }
 
-export interface ApiResponse<T = unknown> {
+export interface WishlistResponse {
   success: boolean;
-  message: string;
-  data?: T;
-  pagination?: {
-    page: number;
-    limit: number;
-    totalPages: number;
-    totalItems: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
+  message?: string;
+  wishlist: WishlistProduct[];
 }
 
-export interface WishlistQuery {
-  page?: number;
-  limit?: number;
-  sort?: string;
-}
+const wishlistService = {
+  // Lấy danh sách sản phẩm yêu thích
+  getWishlist: () =>
+    axiosInstanceAuth.get<WishlistResponse>("/api/v1/users/wishlist"),
 
-export const wishlistService = {
-  // Lấy danh sách wishlist của user
-  getUserWishlist: (
-    params: WishlistQuery = {}
-  ): Promise<{ data: ApiResponse<{ wishlist: WishlistItem[] }> }> =>
-    axiosInstanceAuth.get("/api/v1/users/wishlist", { params }),
+  // Thêm sản phẩm vào danh sách yêu thích
+  addToWishlist: (productId: string, variantId: string) =>
+    axiosInstanceAuth.post<{
+      success: boolean;
+      message: string;
+      isExisting?: boolean;
+    }>("/api/v1/users/wishlist", {
+      productId,
+      variantId,
+    }),
 
-  // Thêm sản phẩm vào wishlist
-  addToWishlist: (
-    productId: string,
-    variantId?: string
-  ): Promise<{ data: ApiResponse }> => {
-    const data = { productId };
-    if (variantId) {
-      Object.assign(data, { variantId });
-    }
-    return axiosInstanceAuth.post("/api/v1/users/wishlist", data);
-  },
-
-  // Xóa sản phẩm khỏi wishlist
-  removeFromWishlist: (
-    wishlistItemId: string
-  ): Promise<{ data: ApiResponse }> =>
-    axiosInstanceAuth.delete(`/api/v1/users/wishlist/${wishlistItemId}`),
-  // Kiểm tra sản phẩm có trong wishlist hay không
-  checkInWishlist: (
-    productId: string
-  ): Promise<{ data: ApiResponse<{ inWishlist: boolean }> }> =>
-    axiosInstanceAuth.get(`/api/v1/users/wishlist/check/${productId}`),
+  // Xóa sản phẩm khỏi danh sách yêu thích
+  removeFromWishlist: (wishlistItemId: string) =>
+    axiosInstanceAuth.delete<{ success: boolean; message: string }>(
+      `/api/v1/users/wishlist/${wishlistItemId}`
+    ),
 };
 
 export default wishlistService;

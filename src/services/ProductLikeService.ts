@@ -1,20 +1,18 @@
 import { axiosInstanceAuth } from "../utils/axiosIntance";
 
-export const productLikeApi = {
-  // Lấy danh sách sản phẩm yêu thích
-  getWishlist: () =>
-    axiosInstanceAuth.get("http://localhost:5005/api/v1/users/wishlist"),
+// Thêm code cần thiết cho service này
+const productLikeService = {
+  likeProduct: async (productId: string) => {
+    return await axiosInstanceAuth.post(`/api/v1/products/${productId}/like`);
+  },
 
-  // Thêm sản phẩm vào wishlist
-  addToWishlist: (productId: string, variantId: string) =>
-    axiosInstanceAuth.post("http://localhost:5005/api/v1/users/wishlist", {
-      productId,
-      variantId,
-    }),
+  unlikeProduct: async (productId: string) => {
+    return await axiosInstanceAuth.delete(`/api/v1/products/${productId}/like`);
+  },
 
-  // Xóa sản phẩm khỏi wishlist (xóa theo productId)
-  removeFromWishlist: (wishlistItemId: string) =>
-    axiosInstanceAuth.delete(
-      `http://localhost:5005/api/v1/users/wishlist/${wishlistItemId}`
-    ),
+  getUserLikedProducts: async () => {
+    return await axiosInstanceAuth.get(`/api/v1/users/liked-products`);
+  },
 };
+
+export default productLikeService;

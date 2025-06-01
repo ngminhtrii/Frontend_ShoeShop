@@ -57,33 +57,6 @@ interface ProductImage {
   alt?: string;
 }
 
-interface WishlistItem {
-  _id: string;
-  product: {
-    _id: string;
-    id?: string;
-  };
-  variant?: {
-    _id: string;
-  };
-}
-
-interface WishlistResponse {
-  data: {
-    data?: {
-      wishlist: WishlistItem[];
-    };
-  };
-}
-
-interface AddToWishlistResponse {
-  data: {
-    data: {
-      _id: string;
-    };
-  };
-}
-
 interface ApiError {
   response?: {
     status?: number;
@@ -276,30 +249,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     }
   }, [attributes, variants, selectedGender, selectedColorId]);
 
-  // Fetch related products
-  useEffect(() => {
-    const fetchRelatedProducts = async () => {
-      if (!product || relatedProducts.length > 0) return;
-
-      setLoadingRelated(true);
-      try {
-        const response = await productPublicService.getRelatedProducts(
-          product._id || product.id || "",
-          { limit: 8 }
-        );
-        if (response.data.success && response.data.products) {
-          setRelatedProducts(response.data.products);
-        }
-      } catch (error) {
-        console.error("Error fetching related products:", error);
-      } finally {
-        setLoadingRelated(false);
-      }
-    };
-
-    fetchRelatedProducts();
-  }, [product, relatedProducts.length]);
-
   // Reset quantity when size changes
   useEffect(() => {
     setSelectedQuantity(1);
@@ -338,36 +287,40 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     }
   };
 
-  // Kiểm tra sản phẩm đã yêu thích chưa
+  // Kiểm tra sản phẩm đã có trong wishlist khi component mount hoặc variant thay đổi
   useEffect(() => {
-    const fetchWishlist = async () => {
-      if (!isAuthenticated) return;
+    const checkWishlistStatus = async () => {
+      if (
+        isAuthenticated &&
+        product &&
+        (product._id || product.id) &&
+        selectedColorId
+      ) {
+        const variantId = getVariantId();
+        if (!variantId) return;
 
-      try {
-        const res =
-          (await wishlistService.getUserWishlist()) as WishlistResponse;
-        const foundItem = res.data.data?.wishlist.find(
-          (item: WishlistItem) =>
-            (item.product._id === (product._id || product.id) ||
-              item.product.id === (product._id || product.id)) &&
-            item.variant?._id === getVariantId()
-        );
-        setIsLiked(!!foundItem);
-        setWishlistItemId(foundItem ? foundItem._id : null);
-      } catch {
-        setIsLiked(false);
-        setWishlistItemId(null);
+        try {
+          const wishlistResponse = await wishlistService.getWishlist();
+          if (wishlistResponse.data && wishlistResponse.data.success) {
+            const foundItem = wishlistResponse.data.wishlist.find((item) => {
+              const productIdMatches =
+                item.product._id === (product._id || product.id);
+              const variantIdMatches =
+                item.variant && item.variant._id === variantId;
+              return productIdMatches && variantIdMatches;
+            });
+
+            setIsLiked(!!foundItem);
+            setWishlistItemId(foundItem ? foundItem._id : null);
+          }
+        } catch (error) {
+          console.error("Lỗi khi kiểm tra trạng thái wishlist:", error);
+        }
       }
     };
 
-    const getVariantId = () => {
-      if (!variants || !selectedGender || !selectedColorId) return null;
-      const variantKey = `${selectedGender}-${selectedColorId}`;
-      return variants[variantKey]?.id || null;
-    };
-
-    if (product && getVariantId()) fetchWishlist();
-  }, [product, selectedGender, selectedColorId, isAuthenticated, variants]);
+    checkWishlistStatus();
+  }, [isAuthenticated, product, selectedColorId, selectedGender, variants]);
 
   if (!product) {
     return (
@@ -397,6 +350,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   const getSizeDetails = (sizeId: string): Size | null => {
     return attributes?.sizes?.find((size) => size._id === sizeId) || null;
   };
+
   // Xử lý thêm vào giỏ hàng - Cập nhật với error handling tốt hơn
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
@@ -463,6 +417,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       navigate(
         `/login?returnUrl=${encodeURIComponent(window.location.pathname)}`
       );
+      return;
     }
 
     if (!selectedGender || !selectedColorId || !selectedSizeId) {
@@ -507,7 +462,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     } finally {
       setLoadingBuyNow(false);
     }
-  }; // Xử lý yêu thích
+  };
+
+  // Xử lý yêu thích
   const handleToggleWishlist = async () => {
     if (!isAuthenticated) {
       toast.error("Vui lòng đăng nhập để sử dụng tính năng này");
@@ -526,22 +483,62 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     setLikeLoading(true);
     try {
       if (isLiked && wishlistItemId) {
-        await wishlistService.removeFromWishlist(wishlistItemId);
-        setIsLiked(false);
-        setWishlistItemId(null);
-        toast.success("Đã xóa khỏi danh sách yêu thích");
+        const response = await wishlistService.removeFromWishlist(
+          wishlistItemId
+        );
+        if (response.data && response.data.success) {
+          setIsLiked(false);
+          setWishlistItemId(null);
+          toast.success("Đã xóa khỏi danh sách yêu thích");
+        }
       } else {
-        const response = (await wishlistService.addToWishlist(
-          product._id || product.id || "",
+        // Thêm vào wishlist
+        const productId = product._id || product.id || "";
+        const response = await wishlistService.addToWishlist(
+          productId,
           variantId
-        )) as AddToWishlistResponse;
-        setIsLiked(true);
-        setWishlistItemId(response.data.data._id);
-        toast.success("Đã thêm vào danh sách yêu thích");
+        );
+
+        if (response.data && response.data.success) {
+          // Nếu thêm thành công hoặc đã tồn tại
+          if (response.data.isExisting) {
+            toast.success(
+              response.data.message ||
+                "Sản phẩm đã có trong danh sách yêu thích"
+            );
+          } else {
+            toast.success(
+              response.data.message || "Đã thêm vào danh sách yêu thích"
+            );
+          }
+
+          // Lấy danh sách wishlist mới để có được ID của item vừa thêm
+          try {
+            const wishlistRes = await wishlistService.getWishlist();
+            const wishlistItems = wishlistRes.data.wishlist || [];
+
+            // Tìm item mới thêm vào
+            const newItem = wishlistItems.find(
+              (item) =>
+                item.product._id === (product._id || product.id) &&
+                item.variant?._id === variantId
+            );
+
+            if (newItem) {
+              setWishlistItemId(newItem._id);
+            }
+          } catch (fetchError) {
+            console.error("Lỗi khi tải lại wishlist:", fetchError);
+          }
+
+          setIsLiked(true);
+        }
       }
-    } catch (error: unknown) {
-      const apiError = error as ApiError;
-      toast.error(apiError?.response?.data?.message || "Có lỗi xảy ra");
+    } catch (error: any) {
+      console.error("Lỗi khi thêm/xóa wishlist:", error);
+      const errorMessage =
+        error.response?.data?.message || "Có lỗi xảy ra khi xử lý yêu thích";
+      toast.error(errorMessage);
     } finally {
       setLikeLoading(false);
     }
@@ -919,8 +916,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 likeLoading || !selectedColorId
                   ? "border-gray-300 text-gray-400 cursor-not-allowed"
                   : isLiked
-                  ? "border-red-500 text-red-500 hover:bg-red-50"
-                  : "border-gray-300 text-gray-700 hover:border-gray-400"
+                  ? "border-red-500 text-red-500 bg-red-50 hover:bg-red-100"
+                  : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50"
               }`}
             >
               {likeLoading ? (
@@ -965,7 +962,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             </div>
           </div>
         </div>
-      </div>{" "}
+      </div>
+
       {/* Related Products Section */}
       {(relatedProducts.length > 0 ||
         (similarProducts && similarProducts.length > 0)) && (
@@ -998,7 +996,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             </div>
           ) : (
             <>
-              {" "}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
                 {(relatedProducts.length > 0
                   ? relatedProducts
