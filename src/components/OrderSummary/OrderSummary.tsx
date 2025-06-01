@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import { orderApi } from "../../services/OrderService";
 import { inforApi } from "../../services/InforService";
-import MainNavbar from "../Navbar/MainNavbar"; // Thêm dòng này
 
 interface Address {
   _id: string;
@@ -21,6 +22,7 @@ const OrderSummary: React.FC = () => {
   const [note, setNote] = useState("");
   const [discountCode, setDiscountCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Lấy danh sách địa chỉ từ API user
   useEffect(() => {
@@ -40,6 +42,7 @@ const OrderSummary: React.FC = () => {
   }, []);
 
   const handleOrder = async () => {
+    setLoading(true);
     try {
       const res = await orderApi.createOrder({
         addressId,
@@ -54,9 +57,10 @@ const OrderSummary: React.FC = () => {
         return;
       }
 
-      alert("Đặt hàng thành công!");
-    } catch {
-      alert("Đặt hàng thất bại!");
+      toast.success("Đặt hàng thành công!");
+      navigate("/order-success"); // Chuyển hướng đến trang thành công
+    } catch (error) {
+      toast.error("Đặt hàng thất bại! Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }

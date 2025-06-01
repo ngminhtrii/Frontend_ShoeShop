@@ -9,6 +9,10 @@ export interface CartVariant {
   price: number;
   priceFinal: number;
   percentDiscount?: number;
+  product?: {
+    _id: string;
+    name?: string;
+  };
 }
 
 export interface CartSize {

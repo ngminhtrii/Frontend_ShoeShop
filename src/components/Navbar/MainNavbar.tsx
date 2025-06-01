@@ -125,7 +125,7 @@ const MainNavbar = () => {
             to="/products?sort=popular"
             className="hover:text-blue-600 transition-colors font-medium"
           >
-            SẢN PHẨM BÁN CHẠY
+            SẢN PHẨM PHỔ BIẾN
           </Link>
         </li>
         <li>

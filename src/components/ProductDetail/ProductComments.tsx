@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { reviewApi, Review } from "../../services/ReviewServiceV2";
 import { FaHeart, FaRegHeart, FaStar, FaRegStar, FaUser } from "react-icons/fa";
-import useAuth from "../../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 

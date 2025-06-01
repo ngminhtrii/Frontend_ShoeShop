@@ -53,6 +53,18 @@ export interface ApiResponse<T = any> {
   data?: T;
   cart?: Cart;
   preview?: any;
+  updatedItem?: {
+    quantity: number;
+    // Các trường khác của cart item
+  };
+  productInfo?: {
+    exceededInventory?: boolean;
+    availableQuantity?: number;
+    variant?: string;
+    size?: string;
+    requestedQuantity?: number;
+    adjustedQuantity?: number;
+  };
 }
 
 export const cartService = {

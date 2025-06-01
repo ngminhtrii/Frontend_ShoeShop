@@ -10,7 +10,7 @@ import ProductDetail from "../../components/ProductDetail/ProductDetail";
 import { Product, productPublicService } from "../../services/ProductServiceV2";
 
 const ProductDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
@@ -26,20 +26,20 @@ const ProductDetailPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        if (!id) {
-          setError("Không tìm thấy ID sản phẩm");
+        if (!slug) {
+          setError("Không tìm thấy slug sản phẩm");
           return;
         }
 
         let response;
 
-        // Kiểm tra nếu id là slug hoặc là ID MongoDB
-        const isMongoId = /^[0-9a-fA-F]{24}$/.test(id);
+        // Kiểm tra nếu slug là ID MongoDB
+        const isMongoId = /^[0-9a-fA-F]{24}$/.test(slug);
 
         if (isMongoId) {
-          response = await productPublicService.getProductById(id);
+          response = await productPublicService.getProductById(slug);
         } else {
-          response = await productPublicService.getProductBySlug(id);
+          response = await productPublicService.getProductBySlug(slug);
         }
 
         if (response.data.success) {
@@ -94,11 +94,11 @@ const ProductDetailPage: React.FC = () => {
       }
     };
 
-    // Gọi lại API khi id thay đổi
+    // Gọi lại API khi slug thay đổi
     fetchProduct();
-  }, [id, location.pathname]);
+  }, [slug, location.pathname]);
 
-  // Helper function để lấy ID hoặc slug sản phẩm
+  // Helper function để lấy slug sản phẩm
   const getProductIdentifier = (product: Product): string => {
     return product.slug || product._id || "";
   };

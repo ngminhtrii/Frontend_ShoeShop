@@ -1,30 +1,41 @@
 // src/components/Auth/AuthGuard.tsx
+import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import useAuth from "../../hooks/useAuth";
-import { toast } from "react-hot-toast";
+import { useAuth } from "../../hooks/useAuth";
 
 interface AuthGuardProps {
   children: React.ReactNode;
   adminOnly?: boolean;
 }
 
-const AuthGuard: React.FC<AuthGuardProps> = ({ children, adminOnly = false }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+const AuthGuard: React.FC<AuthGuardProps> = ({
+  children,
+  adminOnly = false,
+}) => {
+  const { isAuthenticated, user, loading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>;
+  // Đang load thông tin xác thực
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
+  // Chưa đăng nhập
   if (!isAuthenticated) {
-    toast.error("Vui lòng đăng nhập để tiếp tục");
-    return <Navigate to={`/login?returnUrl=${encodeURIComponent(location.pathname)}`} replace />;
+    return (
+      <Navigate
+        to={`/login?returnUrl=${encodeURIComponent(location.pathname)}`}
+        replace
+      />
+    );
   }
 
+  // Yêu cầu quyền admin nhưng user không phải admin
   if (adminOnly && user?.role !== "admin") {
-    toast.error("Bạn không có quyền truy cập trang này");
     return <Navigate to="/" replace />;
   }
 

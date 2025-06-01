@@ -1,14 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import useAuth from "../../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import { toast } from "react-hot-toast";
 // @ts-expect-error - Font import doesn't have TypeScript types
 import "@fontsource/lobster";
-import { authenticateApi } from "../../services/AuthenticationService";
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [registerName, setRegisterName] = useState("");
@@ -17,55 +16,54 @@ const LoginForm: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await authenticateApi.login({
-        email: loginEmail,
-        password: loginPassword,
-      });
-
-      // Gọi hàm login từ useAuth để cập nhật state
-      login(response.data);
+      const response = await login(loginEmail, loginPassword);
 
       toast.success("Đăng nhập thành công!");
 
-      if (response.data.role === "admin") {
+      if (response.user.isAdmin) {
         navigate("/admin");
       } else {
-        // Lấy redirect URL từ query params nếu có
         const urlParams = new URLSearchParams(window.location.search);
         const redirectTo = urlParams.get("redirect") || "/";
         navigate(redirectTo);
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("🚨 Đăng nhập thất bại:", error);
-      toast.error("Email hoặc mật khẩu không đúng!");
+
+      // Chỉ hiển thị lỗi nếu không phải lỗi 401 (đã được interceptor xử lý)
+      if (error.response?.status !== 401) {
+        let errorMessage = "Đăng nhập thất bại!";
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        toast.error(errorMessage);
+      }
     }
   };
 
   const handleRegister = async () => {
     console.log("Hàm handleRegister được gọi");
     try {
-      const response = await authenticateApi.register({
-        name: registerName,
-        email: registerEmail,
-        password: registerPassword,
-      });
+      const response = await register(
+        registerName,
+        registerEmail,
+        registerPassword
+      );
       console.log("Phản hồi từ API:", response);
 
-      if (response.status === 201) {
-        console.log(
-          "🎉 Đăng ký thành công! Vui lòng kiểm tra email để xác thực."
-        );
-        navigate("/otp-verification");
-      }
-    } catch (error: unknown) {
+      toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác thực.");
+      navigate("/otp-verification", {
+        state: { email: registerEmail },
+      });
+    } catch (error: any) {
       let errorMessage = "Đăng ký thất bại!";
-      if (error && typeof error === "object" && "response" in error) {
-        const response = (
-          error as { response?: { data?: { message?: string } } }
-        ).response;
-        if (response?.data?.message) {
-          errorMessage = response.data.message;
-        }
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       console.error("🚨 Đăng ký thất bại:", errorMessage);
       toast.error(errorMessage);

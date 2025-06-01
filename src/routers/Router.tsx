@@ -25,6 +25,8 @@ import SizePage from "../pages/AdminPages/SizePage/SizePage";
 import PaymentStatusPage from "../pages/OrderConfirmationPage/PaymentStatusPage";
 import VariantPage from "../pages/AdminPages/VariantPage/VariantPage";
 import AuthGuard from "../components/Auth/AuthGuard";
+import CouponsPage from "../pages/MainPages/Coupons/Coupons";
+import ResetPasswordPage from "../pages/AuthPages/ResetPasswordPage";
 
 const AppRouter = () => {
   return (
@@ -34,6 +36,7 @@ const AppRouter = () => {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/otp-verification" element={<OTPVerificationPage />} />
       <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
       {/* Admin routes - sử dụng AdminLayout */}
       <Route
@@ -61,7 +64,8 @@ const AppRouter = () => {
       <Route path="/" element={<MainLayout />}>
         <Route path="" element={<LandingPage />} />
         <Route path="products" element={<ProductListPage />} />
-        <Route path="product/:id" element={<ProductDetailPage />} />
+        <Route path="product/:slug" element={<ProductDetailPage />} />
+        <Route path="coupons" element={<CouponsPage />} />
         <Route
           path="cart"
           element={

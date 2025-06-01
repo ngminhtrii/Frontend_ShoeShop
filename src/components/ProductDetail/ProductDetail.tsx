@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import useAuth from "../../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import cartService from "../../services/CartServiceV2";
 import wishlistService from "../../services/WishlistService";
@@ -303,7 +303,41 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   // Reset quantity when size changes
   useEffect(() => {
     setSelectedQuantity(1);
+    setQuantityInput("1");
   }, [selectedSizeId, selectedColorId]);
+
+  const [quantityInput, setQuantityInput] = useState("1");
+
+  // Xử lý nhập số lượng
+  const handleQuantityChange = (value: string) => {
+    // Chỉ cho phép nhập số dương
+    const sanitizedValue = value.replace(/[^0-9]/g, "").slice(0, 2);
+    setQuantityInput(sanitizedValue);
+
+    const numValue = parseInt(sanitizedValue);
+    if (!isNaN(numValue) && numValue > 0) {
+      // Giới hạn số lượng không vượt quá tồn kho
+      const limitedValue = Math.min(numValue, availableStock);
+      setSelectedQuantity(limitedValue);
+
+      // Nếu giới hạn tồn kho ít hơn số nhập, cập nhật lại input và hiển thị thông báo
+      if (limitedValue < numValue) {
+        setQuantityInput(limitedValue.toString());
+        toast.error(`Số lượng tối đa có thể chọn là ${availableStock}`);
+      }
+    }
+  };
+
+  // Xử lý khi input mất focus
+  const handleQuantityBlur = () => {
+    const numValue = parseInt(quantityInput);
+    if (isNaN(numValue) || numValue < 1) {
+      // Nếu giá trị không hợp lệ, đặt về 1
+      setQuantityInput("1");
+      setSelectedQuantity(1);
+    }
+  };
+
   // Kiểm tra sản phẩm đã yêu thích chưa
   useEffect(() => {
     const fetchWishlist = async () => {
@@ -406,10 +440,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       console.error("Add to cart error:", error);
       const apiError = error as ApiError;
 
-      // Nếu lỗi xác thực, hướng đến trang đăng nhập
+      // Nếu lỗi xác thực, không hiển thị thông báo vì interceptor đã xử lý
       if (apiError.response?.status === 401) {
-        toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
-        // Không redirect ngay lập tức vì axios interceptor sẽ xử lý
+        // Không cần hiển thị thông báo vì axios interceptor sẽ xử lý
+        return;
       } else {
         const errorMessage =
           apiError?.response?.data?.message ||
@@ -429,7 +463,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
       navigate(
         `/login?returnUrl=${encodeURIComponent(window.location.pathname)}`
       );
-      return;
     }
 
     if (!selectedGender || !selectedColorId || !selectedSizeId) {
@@ -789,22 +822,33 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               <h3 className="text-lg font-medium mb-3">Số lượng:</h3>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() =>
-                    setSelectedQuantity(Math.max(1, selectedQuantity - 1))
-                  }
+                  onClick={() => {
+                    const newQty = Math.max(1, selectedQuantity - 1);
+                    setSelectedQuantity(newQty);
+                    setQuantityInput(newQty.toString());
+                  }}
                   className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   <FiMinus />
                 </button>
-                <span className="px-4 py-2 border border-gray-300 rounded-lg">
-                  {selectedQuantity}
-                </span>
+
+                <input
+                  type="text"
+                  value={quantityInput}
+                  onChange={(e) => handleQuantityChange(e.target.value)}
+                  onBlur={handleQuantityBlur}
+                  className="px-4 py-2 border border-gray-300 rounded-lg w-[60px] text-center"
+                />
+
                 <button
-                  onClick={() =>
-                    setSelectedQuantity(
-                      Math.min(availableStock, selectedQuantity + 1)
-                    )
-                  }
+                  onClick={() => {
+                    const newQty = Math.min(
+                      availableStock,
+                      selectedQuantity + 1
+                    );
+                    setSelectedQuantity(newQty);
+                    setQuantityInput(newQty.toString());
+                  }}
                   className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   <FiPlus />
@@ -963,11 +1007,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   .slice(0, 10)
                   .map((relatedProduct, index) => (
                     <ProductCard
-                      key={
-                        relatedProduct._id ||
-                        relatedProduct.id ||
-                        `product-${index}`
-                      }
+                      key={relatedProduct._id || `product-${index}`}
                       product={relatedProduct as ProductType}
                       onClick={() =>
                         navigate(
