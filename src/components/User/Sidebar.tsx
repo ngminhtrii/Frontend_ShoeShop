@@ -6,6 +6,8 @@ import {
   FaSignOutAlt,
   FaStar,
   FaTimesCircle,
+  FaKey,
+  FaLaptopCode,
 } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { authenticateApi } from "../../services/AuthenticationService";
@@ -52,6 +54,16 @@ const Sidebar: React.FC = () => {
       path: "/like-page",
       icon: <FaHeart className="text-xl" />,
       label: "Sản phẩm yêu thích",
+    },
+    {
+      path: "/user-change-password",
+      icon: <FaKey className="text-xl" />,
+      label: "Đổi mật khẩu",
+    },
+    {
+      path: "/user-sessions",
+      icon: <FaLaptopCode className="text-xl" />, // Có thể thay đổi icon nếu cần
+      label: "Phiên đăng nhập",
     },
     {
       path: "/logout",

@@ -30,7 +30,9 @@ import VariantPage from "../pages/AdminPages/VariantPage/VariantPage";
 import AuthGuard from "../components/Auth/AuthGuard";
 import CouponsPage from "../pages/MainPages/Coupons/Coupons";
 import ResetPasswordPage from "../pages/AuthPages/ResetPasswordPage";
-import 
+import UserChangePasswordPage from "../pages/MainPages/UserPage/UserChangePasswordPage";
+import UserSessionsPage from "../pages/MainPages/UserPage/UserSessionsPage";
+
 const AppRouter = () => {
   return (
     <Routes>
@@ -122,6 +124,22 @@ const AppRouter = () => {
           element={
             <AuthGuard>
               <LikePage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="user-change-password"
+          element={
+            <AuthGuard>
+              <UserChangePasswordPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="user-sessions"
+          element={
+            <AuthGuard>
+              <UserSessionsPage />
             </AuthGuard>
           }
         />
