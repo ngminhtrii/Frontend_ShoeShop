@@ -4,23 +4,34 @@ import { useAuth } from "../../hooks/useAuth";
 import { toast } from "react-hot-toast";
 // @ts-expect-error - Font import doesn't have TypeScript types
 import "@fontsource/lobster";
+// Đảm bảo import đúng từ service
+import { register as registerUser } from "../../services/AuthenticationService";
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
-      const response = await login(loginEmail, loginPassword);
+      setLoading(true);
+
+      // Validate input
+      if (!loginEmail.trim() || !loginPassword.trim()) {
+        toast.error("Vui lòng nhập đầy đủ email và mật khẩu!");
+        return;
+      }
+
+      const response = await login(loginEmail.trim(), loginPassword);
 
       toast.success("Đăng nhập thành công!");
 
-      if (response.user.isAdmin) {
+      if (response.user?.role === "admin") {
         navigate("/admin");
       } else {
         const urlParams = new URLSearchParams(window.location.search);
@@ -45,19 +56,31 @@ const LoginForm: React.FC = () => {
       else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      // Trường hợp lỗi từ axios
+      // Trường hợp lỗi network hoặc khác
       else if (error.message) {
-        errorMessage = error.message;
+        if (
+          error.message.includes("Network Error") ||
+          error.code === "ERR_NETWORK"
+        ) {
+          errorMessage =
+            "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng!";
+        } else if (error.message.includes("404")) {
+          errorMessage = "API đăng nhập không tồn tại. Vui lòng liên hệ admin!";
+        } else {
+          errorMessage = error.message;
+        }
       }
 
       toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRegister = async () => {
     console.log("Hàm handleRegister được gọi");
     try {
-      const response = await register(
+      const response = await registerUser(
         registerName,
         registerEmail,
         registerPassword
@@ -118,8 +141,9 @@ const LoginForm: React.FC = () => {
             <button
               className="bg-black text-white px-4 py-2 rounded-md w-[40%]"
               onClick={handleLogin}
+              disabled={loading}
             >
-              Đăng nhập
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
             <button
               className="text-black text-base ml-2"

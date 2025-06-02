@@ -133,14 +133,14 @@ const LikePage: React.FC = () => {
               }
             />
 
-            {/* Nút xóa - Đặt ở góc dưới bên phải */}
+            {/* Nút xóa - Đặt ở góc dưới bên phải và làm to hơn */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 removeProduct(item._id);
               }}
               disabled={removingItems.has(item._id)}
-              className="absolute bottom-2 right-2 z-10 bg-slate-400 p-3 rounded-full shadow-lg hover:bg-red-300 transition-colors"
+              className="absolute bottom-2 right-2 z-10 bg-white p-3 rounded-full shadow-lg hover:bg-red-100 transition-colors"
               title="Xóa khỏi yêu thích"
             >
               {removingItems.has(item._id) ? (

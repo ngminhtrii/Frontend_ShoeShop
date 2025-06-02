@@ -1,13 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import { BiSearch } from "react-icons/bi";
-import { AiOutlineShoppingCart, AiOutlineUser } from "react-icons/ai";
+import {
+  AiOutlineShoppingCart,
+  AiOutlineUser,
+  AiOutlineDashboard,
+} from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import { filterService, SearchSuggestion } from "../../services/FilterService";
+import { useAuth } from "../../hooks/useAuth";
 // @ts-ignore
 import "@fontsource/lobster";
 
 const MainNavbar = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -254,6 +260,17 @@ const MainNavbar = () => {
             <AiOutlineUser className="text-2xl text-gray-700 hover:text-red-500 transition" />
           </Link>
         </li>
+        {/* Dashboard - Hiển thị nếu là admin */}
+        {user?.role === "admin" && (
+          <li>
+            <Link
+              to="/admin/dashboard"
+              className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <AiOutlineDashboard className="text-2xl text-gray-700 hover:text-green-500 transition" />
+            </Link>
+          </li>
+        )}
       </ul>
     </nav>
   );

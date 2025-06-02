@@ -63,7 +63,6 @@ interface Cart {
 const Cart: React.FC = () => {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState<Set<string>>(new Set());
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -219,9 +218,7 @@ const Cart: React.FC = () => {
       try {
         const response = await cartService.updateCartItemQuantity(itemId, {
           quantity: newQuantity,
-        });
-
-        // Chỉ update nếu đây là request mới nhất
+        }); // Chỉ update nếu đây là request mới nhất
         if (lastUpdateTime.current.get(itemId) === now) {
           if (response.data.success) {
             const updatedCart = response.data.cart;
@@ -258,16 +255,8 @@ const Cart: React.FC = () => {
             return newMap;
           });
         }
-      } finally {
-        if (lastUpdateTime.current.get(itemId) === now) {
-          setUpdating((prev: Set<string>) => {
-            const newSet = new Set(prev);
-            newSet.delete(itemId);
-            return newSet;
-          });
-        }
       }
-    }, 400), // Giảm debounce xuống 400ms
+    }, 400),
     []
   );
 
@@ -283,17 +272,12 @@ const Cart: React.FC = () => {
       const existingTimeout = updateTimeouts.current.get(itemId);
       if (existingTimeout) {
         clearTimeout(existingTimeout);
-      }
-
-      // Optimistic update ngay lập tức
+      } // Optimistic update ngay lập tức
       setOptimisticQuantities((prev) => {
         const newMap = new Map(prev);
         newMap.set(itemId, newQuantity);
         return newMap;
       });
-
-      // Vẫn giữ lại logic này để theo dõi trạng thái updating (nhưng không hiển thị UI)
-      setUpdating((prev: Set<string>) => new Set([...prev, itemId]));
 
       if (isImmediate) {
         // Cancel debounce và gọi trực tiếp cho button click

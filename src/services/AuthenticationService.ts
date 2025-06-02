@@ -76,3 +76,21 @@ export const authenticateApi = {
     return axiosInstanceAuth.delete(`/api/v1/auth/logout-all`);
   },
 };
+
+// Thêm hàm đăng ký vào service để export
+export const register = async (
+  name: string,
+  email: string,
+  password: string
+) => {
+  try {
+    const response = await axiosInstance.post("/api/v1/auth/register", {
+      name,
+      email,
+      password,
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

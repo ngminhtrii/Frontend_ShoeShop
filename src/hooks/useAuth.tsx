@@ -1,210 +1,364 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { authApi } from "../services/AuthService";
+import React, {
+  createContext,
+  ReactNode,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
+import { toast } from "react-hot-toast";
+import authService, {
+  AuthResponse,
+  SessionInfo,
+} from "../services/AuthService";
+import { jwtDecode } from "jwt-decode";
 
 interface User {
   _id: string;
   name: string;
   email: string;
-  role: string; // Thêm role property
-  isAdmin: boolean;
+  role: string;
   avatar?: string;
+  isEmailVerified?: boolean;
+}
+
+interface LoginResult {
+  success: boolean;
+  user: User;
 }
 
 interface AuthContextType {
-  user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  loading: boolean; // Thêm loading state
-  login: (email: string, password: string) => Promise<any>;
-  logout: () => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<any>;
-  verifyOTP: (email: string, otp: string) => Promise<any>;
-  forgotPassword: (email: string) => Promise<any>;
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  logout: () => void;
+  register: (
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<AuthResponse>;
+  verifyOTP: (email: string, otp: string) => Promise<AuthResponse>;
   resetPassword: (
-    resetToken: string,
+    token: string,
     password: string,
     confirmPassword: string
-  ) => Promise<any>;
-  refreshUser: () => Promise<void>;
+  ) => Promise<AuthResponse>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => Promise<AuthResponse>;
+  getSessions: () => Promise<AuthResponse<SessionInfo[]>>;
+  logoutSession: (sessionId: string) => Promise<AuthResponse>;
+  logoutAllOtherSessions: () => Promise<AuthResponse>;
+  logoutAll: () => Promise<AuthResponse>;
+  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true); // Thêm loading state
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Kiểm tra trạng thái đăng nhập khi khởi động
+  // Các hàm xử lý token
+  const removeTokens = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+  };
+
+  // Kiểm tra xem người dùng đã đăng nhập hay chưa khi khởi động
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        setLoading(true);
-        const accessToken = localStorage.getItem("accessToken");
+    const checkAuth = () => {
+      const token = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
-        if (accessToken) {
-          const { data } = await authApi.getMe();
-          if (data.success) {
-            setUser(data.user);
-            setIsAuthenticated(true);
-          } else {
-            // Token không hợp lệ, xóa khỏi localStorage
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            setUser(null);
+      if (token && storedUser) {
+        try {
+          // Kiểm tra xem token có hợp lệ không
+          const decodedToken = jwtDecode<{ exp: number }>(token);
+          const currentTime = Date.now() / 1000;
+
+          if (decodedToken.exp < currentTime) {
+            // Token đã hết hạn
+            removeTokens();
             setIsAuthenticated(false);
+            setUser(null);
+          } else {
+            // Token còn hạn
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+            setIsAuthenticated(true);
           }
+        } catch {
+          // Token không hợp lệ
+          removeTokens();
+          setIsAuthenticated(false);
+          setUser(null);
         }
-      } catch (error) {
-        console.error("Failed to check auth status:", error);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        setUser(null);
+      } else {
         setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
+        setUser(null);
       }
+      setLoading(false);
+      setIsLoading(false);
     };
-
-    checkAuthStatus();
+    checkAuth();
   }, []);
 
-  // Hàm tiện ích xử lý lỗi từ API
-  const handleApiError = (error: any): string => {
-    if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-      return error.response.data.errors[0].msg;
-    } else if (error.response?.data?.message) {
-      return error.response.data.message;
-    } else if (error.message) {
-      return error.message;
-    }
-    return "Có lỗi xảy ra";
-  };
-
-  // Login function
-  const login = async (email: string, password: string) => {
+  // Đăng nhập
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<LoginResult> => {
     try {
-      const response = await authApi.login(email, password);
-      const {
-        _id,
-        name,
-        email: userEmail,
-        role,
-        avatar,
-        token,
-        refreshToken,
-      } = response;
+      setLoading(true);
 
-      localStorage.setItem("accessToken", token);
-      localStorage.setItem("refreshToken", refreshToken);
+      // Gọi API login
+      const response = await authService.login(email, password);
 
-      const userData = {
-        _id,
-        name,
-        email: userEmail,
-        role,
-        isAdmin: role === "admin",
-        avatar,
-      };
+      console.log("Login response:", response); // Debug log
 
-      setUser(userData);
-      setIsAuthenticated(true);
+      // Backend trả về direct object, không có success wrapper
+      // Kiểm tra xem response có token không
+      if (response && response.token) {
+        const {
+          token,
+          refreshToken,
+          _id,
+          name,
+          email: userEmail,
+          role,
+          avatar,
+          isVerified,
+        } = response;
 
-      return { user: userData };
-    } catch (error) {
-      throw error;
-    }
-  };
+        // Kiểm tra xem token có tồn tại không
+        if (!token) {
+          console.error("Access token missing in response", response);
+          throw new Error("Đăng nhập thất bại: Thiếu token xác thực");
+        }
 
-  // Logout function
-  const logout = async () => {
-    try {
-      await authApi.logout();
-    } catch (error) {
-      console.error("Logout error:", error);
+        // Lưu tokens
+        localStorage.setItem("accessToken", token);
+        localStorage.setItem("token", token); // Cho backwards compatibility
+
+        if (refreshToken) {
+          localStorage.setItem("refreshToken", refreshToken);
+        }
+
+        // Tạo user info từ response
+        const userInfo: User = {
+          _id: _id,
+          name: name,
+          email: userEmail,
+          role: role,
+          avatar: avatar,
+          isEmailVerified: isVerified,
+        };
+
+        // Lưu user info
+        localStorage.setItem("user", JSON.stringify(userInfo));
+        setUser(userInfo);
+        setIsAuthenticated(true);
+
+        return { success: true, user: userInfo };
+      } else {
+        // Xử lý trường hợp không có token trong response
+        console.error("Login failed: No token in response", response);
+        throw new Error("Đăng nhập thất bại: Phản hồi không hợp lệ");
+      }
+    } catch (error: unknown) {
+      console.error("Login error:", error);
+
+      // Xử lý phản hồi từ server một cách chi tiết hơn
+      if (error && typeof error === "object" && "response" in error) {
+        // Phản hồi từ server với mã lỗi
+        const axiosError = error as {
+          response: {
+            data?: { message?: string; errors?: Array<{ msg: string }> };
+          };
+        };
+        const errorMessage =
+          axiosError.response.data?.message ||
+          axiosError.response.data?.errors?.[0]?.msg ||
+          "Đăng nhập thất bại: Vui lòng kiểm tra thông tin đăng nhập";
+        throw new Error(errorMessage);
+      } else if (error && typeof error === "object" && "request" in error) {
+        // Không nhận được phản hồi từ server
+        throw new Error("Đăng nhập thất bại: Không thể kết nối đến máy chủ");
+      } else if (error instanceof Error) {
+        throw new Error(error.message);
+      } else {
+        throw new Error("Đăng nhập thất bại");
+      }
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      setUser(null);
-      setIsAuthenticated(false);
+      setLoading(false);
     }
   };
 
-  // Register function
+  // Đăng xuất
+  const logout = useCallback(() => {
+    removeTokens();
+    setIsAuthenticated(false);
+    setUser(null);
+    toast.success("Đã đăng xuất thành công");
+  }, []);
+
+  // Đăng ký
   const register = async (name: string, email: string, password: string) => {
     try {
-      const response = await authApi.register({ name, email, password });
-      return response.data;
-    } catch (error) {
-      throw error;
+      const response = await authService.register({ name, email, password });
+      if (response.data && response.data.success) {
+        return response.data;
+      } else {
+        throw new Error(response.data.message || "Đăng ký thất bại");
+      }
+    } catch (error: unknown) {
+      console.error("Register error:", error);
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response: { data: { message?: string } };
+        };
+        throw new Error(axiosError.response.data.message || "Đăng ký thất bại");
+      } else {
+        throw error;
+      }
     }
   };
 
-  // Verify OTP function
+  // Xác thực OTP
   const verifyOTP = async (email: string, otp: string) => {
     try {
-      const response = await authApi.verifyOtp({ email, otp });
+      // Sửa từ verifyOTP thành verifyOtp theo đúng định nghĩa trong AuthService
+      const response = await authService.verifyOtp({ email, otp });
       return response.data;
     } catch (error) {
+      console.error("Verify OTP error:", error);
       throw error;
     }
   };
 
-  // Forgot password function
-  const forgotPassword = async (email: string) => {
-    try {
-      const response = await authApi.forgotPassword({ email });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  // Reset password function
+  // Đặt lại mật khẩu
   const resetPassword = async (
-    resetToken: string,
+    token: string,
     password: string,
     confirmPassword: string
   ) => {
     try {
-      const response = await authApi.resetPassword(
-        resetToken,
+      // Sửa lại tham số phù hợp với định nghĩa trong AuthService
+      const response = await authService.resetPassword(
+        token,
         password,
         confirmPassword
       );
       return response.data;
     } catch (error) {
+      console.error("Reset password error:", error);
+      throw error;
+    }
+  }; // Đổi mật khẩu  // Đổi mật khẩu
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => {
+    try {
+      // Validate parameters
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        throw new Error("Vui lòng điền đầy đủ thông tin");
+      }
+
+      if (newPassword !== confirmPassword) {
+        throw new Error("Xác nhận mật khẩu không khớp");
+      }
+
+      // Gọi API đổi mật khẩu
+      const response = await authService.changePassword({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("Change password error:", error);
       throw error;
     }
   };
 
-  // Refresh user function
-  const refreshUser = async () => {
+  // Lấy danh sách sessions
+  const getSessions = async () => {
     try {
-      const { data } = await authApi.getMe();
-      if (data.success) {
-        setUser(data.user);
-      }
+      const response = await authService.getSessions();
+      return response.data;
     } catch (error) {
-      console.error("Failed to refresh user:", error);
+      console.error("Get sessions error:", error);
+      throw error;
+    }
+  };
+
+  // Đăng xuất session cụ thể
+  const logoutSession = async (sessionId: string) => {
+    try {
+      const response = await authService.logoutSession(sessionId);
+      return response.data;
+    } catch (error) {
+      console.error("Logout session error:", error);
+      throw error;
+    }
+  };
+
+  // Đăng xuất tất cả sessions khác
+  const logoutAllOtherSessions = async () => {
+    try {
+      const response = await authService.logoutAllOtherSessions();
+      return response.data;
+    } catch (error) {
+      console.error("Logout all other sessions error:", error);
+      throw error;
+    }
+  };
+
+  // Đăng xuất tất cả sessions
+  const logoutAll = async () => {
+    try {
+      const response = await authService.logoutAll();
+      // Sau khi đăng xuất tất cả, cần clear local storage
+      removeTokens();
+      setIsAuthenticated(false);
+      setUser(null);
+      return response.data;
+    } catch (error) {
+      console.error("Logout all error:", error);
+      throw error;
     }
   };
 
   const value = {
-    user,
     isAuthenticated,
-    isAdmin: user?.isAdmin || false,
+    isAdmin: user?.role === "admin",
+    user,
     loading,
     login,
     logout,
     register,
-    verifyOTP,
-    forgotPassword,
+    verifyOTP, // Giữ tên là verifyOTP trong context để tránh thay đổi code quá nhiều
     resetPassword,
-    refreshUser,
-    handleApiError, // Thêm hàm xử lý lỗi cho components khác sử dụng
+    changePassword,
+    getSessions,
+    logoutSession,
+    logoutAllOtherSessions,
+    logoutAll,
+    isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -212,7 +366,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
