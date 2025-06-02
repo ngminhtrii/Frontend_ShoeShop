@@ -92,11 +92,6 @@ const AdminNavbar = () => {
 
       {/* Desktop navbar */}
       <div className="hidden lg:flex lg:justify-between lg:items-center lg:px-6 lg:py-3">
-        {/* Logo và tiêu đề trang */}
-        <div className="flex items-center space-x-4">
-          <h1 className="font-bold text-xl text-gray-800">{getPageTitle()}</h1>
-        </div>
-
         {/* Menu điều hướng */}
         <div className="flex items-center space-x-6">
           {/* Nút chuyển về trang chủ tại navbar desktop */}
