@@ -260,7 +260,7 @@ const Cart: React.FC = () => {
         }
       } finally {
         if (lastUpdateTime.current.get(itemId) === now) {
-          setUpdating((prev) => {
+          setUpdating((prev: Set<string>) => {
             const newSet = new Set(prev);
             newSet.delete(itemId);
             return newSet;
@@ -271,7 +271,7 @@ const Cart: React.FC = () => {
     []
   );
 
-  // Optimized quantity update - bỏ thêm ID vào updating khi tăng/giảm số lượng
+  // Optimized quantity update - vẫn gọi setUpdating cho logic nhưng không hiển thị trên UI
   const updateQuantity = useCallback(
     (itemId: string, newQuantity: number, isImmediate = false) => {
       if (newQuantity < 1 || newQuantity > 99) return;
@@ -291,6 +291,9 @@ const Cart: React.FC = () => {
         newMap.set(itemId, newQuantity);
         return newMap;
       });
+
+      // Vẫn giữ lại logic này để theo dõi trạng thái updating (nhưng không hiển thị UI)
+      setUpdating((prev: Set<string>) => new Set([...prev, itemId]));
 
       if (isImmediate) {
         // Cancel debounce và gọi trực tiếp cho button click
@@ -776,11 +779,7 @@ const Cart: React.FC = () => {
                                   min="1"
                                   max="99"
                                 />
-                                {updating.has(item._id) && (
-                                  <div className="absolute -right-6 top-1/2 transform -translate-y-1/2">
-                                    <FiLoader className="animate-spin text-blue-500 w-4 h-4" />
-                                  </div>
-                                )}
+                                {/* Xóa hiệu ứng loading */}
                               </div>
 
                               <button
