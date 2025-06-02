@@ -37,6 +37,19 @@ export interface Product {
   updatedAt: string;
   deletedAt?: string | null;
   deletedBy?: string | { _id: string; name?: string } | null;
+
+  // Add missing fields for ProductCard compatibility
+  priceRange?: {
+    min: number | null;
+    max: number | null;
+    isSinglePrice?: boolean;
+  };
+  originalPrice?: number;
+  averageRating?: number;
+  reviewCount?: number;
+  isNew?: boolean;
+  salePercentage?: number;
+
   variantSummary?: {
     total: number;
     active: number;
@@ -51,13 +64,85 @@ export interface Product {
     discount: { hasDiscount: boolean; maxPercent: number };
   };
   price?: number;
-  originalPrice?: number;
   discountPercent?: number;
   hasDiscount?: boolean;
   maxDiscountPercent?: number;
   mainImage?: string;
   totalInventory?: number;
 }
+
+// Add ProductCardProduct interface for explicit ProductCard usage
+export interface ProductCardProduct {
+  _id: string;
+  name: string;
+  slug?: string; // Cập nhật để có thể là optional
+  images?: ProductImage[];
+  category?: {
+    _id: string;
+    name: string;
+  };
+  brand?: {
+    _id: string;
+    name: string;
+    logo?: {
+      url: string;
+      public_id: string;
+    };
+  };
+  priceRange: {
+    min: number;
+    max: number;
+    isSinglePrice?: boolean;
+  };
+  originalPrice?: number;
+  averageRating: number;
+  reviewCount: number;
+  isNew?: boolean;
+  salePercentage?: number;
+  stockStatus?: "in_stock" | "low_stock" | "out_of_stock";
+  totalQuantity?: number;
+  price?: number;
+  discountPercent?: number;
+  hasDiscount?: boolean;
+  mainImage?: string;
+}
+
+// Helper type to convert Product to ProductCardProduct
+export type ProductToCardProduct = (product: Product) => ProductCardProduct;
+
+// Helper function to convert Product to ProductCardProduct
+export const convertToProductCardProduct: ProductToCardProduct = (product) => {
+  const priceRange = product.priceRange || {
+    min: 0,
+    max: 0,
+    isSinglePrice: true,
+  };
+
+  return {
+    _id: product._id,
+    name: product.name,
+    slug: product.slug,
+    images: product.images,
+    category: product.category,
+    brand: product.brand,
+    priceRange: {
+      min: priceRange.min || 0,
+      max: priceRange.max || 0,
+      isSinglePrice: priceRange.isSinglePrice !== false,
+    },
+    originalPrice: product.originalPrice,
+    averageRating: product.averageRating || product.rating || 0,
+    reviewCount: product.reviewCount || product.numReviews || 0,
+    isNew: product.isNew,
+    salePercentage: product.salePercentage,
+    stockStatus: product.stockStatus,
+    totalQuantity: product.totalQuantity,
+    price: product.price,
+    discountPercent: product.discountPercent,
+    hasDiscount: product.hasDiscount,
+    mainImage: product.mainImage,
+  };
+};
 
 export interface CreateProductData {
   name: string;

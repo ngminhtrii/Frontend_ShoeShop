@@ -79,7 +79,14 @@ const UserManageOrder: React.FC = () => {
           reason: reason,
         }
       );
-      toast.success(response.data.data.message);
+
+      // Hiển thị thông báo thành công từ response
+      if (response.data && response.data.success) {
+        toast.success(
+          response.data.message || "Yêu cầu hủy đơn hàng đã được gửi thành công"
+        );
+      }
+
       // Refresh danh sách đơn hàng
       fetchOrders(activeTab);
       setShowCancelModal(false);

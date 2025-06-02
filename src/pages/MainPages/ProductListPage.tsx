@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import { FiFilter, FiX } from "react-icons/fi";
 import filterService, {
@@ -12,6 +12,7 @@ import {
   productPublicService,
   Product,
   ProductQueryParams,
+  convertToProductCardProduct,
 } from "../../services/ProductServiceV2";
 import { toast } from "react-hot-toast";
 
@@ -51,6 +52,7 @@ const ProductListPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
+  const navigate = useNavigate();
 
   // Thêm state cho phân trang
   const [pagination, setPagination] = useState({
@@ -347,11 +349,6 @@ const ProductListPage: React.FC = () => {
     return buttons;
   };
 
-  // Helper function để lấy ID hoặc slug sản phẩm
-  const getProductIdentifier = (product: Product): string => {
-    return product.slug || product._id || "";
-  };
-
   // Chức năng lọc bằng checkbox cho danh mục, thương hiệu, size
   const handleCheckboxFilter = (
     type: "category" | "brand" | "sizes" | "colors",
@@ -384,12 +381,9 @@ const ProductListPage: React.FC = () => {
     });
   };
 
-  // Handle navigate to product detail
-  const handleProductClick = (product: Product) => {
-    const identifier = getProductIdentifier(product);
-    if (identifier) {
-      window.location.href = `/product/${identifier}`;
-    }
+  // Hàm điều hướng đến trang chi tiết sản phẩm
+  const navigateToProduct = (product: Product) => {
+    navigate(`/product/${product.slug || product._id}`);
   };
 
   return (
@@ -575,7 +569,7 @@ const ProductListPage: React.FC = () => {
                       }
                       onChange={(e) => {
                         const value = Number(e.target.value);
-                        // Đảm bảo maxPrice không nhỏ hơn minPrice
+                        // Đảm bảo maxPrice không nhỏ hơn giá minPrice
                         if (
                           value >=
                           (filtersState.minPrice ||
@@ -974,7 +968,7 @@ const ProductListPage: React.FC = () => {
                           }
                           onChange={(e) => {
                             const value = Number(e.target.value);
-                            // Đảm bảo maxPrice không nhỏ hơn minPrice
+                            // Đảm bảo maxPrice không nhỏ hơn giá minPrice
                             if (
                               value >=
                               (filtersState.minPrice ||
@@ -1239,8 +1233,8 @@ const ProductListPage: React.FC = () => {
                   {products.map((product) => (
                     <ProductCard
                       key={product._id}
-                      product={product}
-                      onClick={() => handleProductClick(product)}
+                      product={convertToProductCardProduct(product)}
+                      onClick={() => navigateToProduct(product)}
                     />
                   ))}
                 </div>

@@ -4,7 +4,10 @@ import { useNavigate } from "react-router-dom";
 import cartService from "../../services/CartServiceV2";
 import wishlistService from "../../services/WishlistService";
 import { productPublicService } from "../../services/ProductServiceV2";
-import { Product as ProductType } from "../../services/ProductServiceV2";
+import {
+  Product as ProductType,
+  ProductCardProduct,
+} from "../../services/ProductServiceV2";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import {
   FiMinus,
@@ -55,6 +58,9 @@ interface Gender {
 interface ProductImage {
   url: string;
   alt?: string;
+  isMain?: boolean;
+  public_id?: string;
+  displayOrder?: number;
 }
 
 interface ApiError {
@@ -97,6 +103,31 @@ interface Product {
   slug?: string;
   mainImage?: string;
   price?: number;
+  // Add missing properties for compatibility
+  variants?: string[] | any[];
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  priceRange?: {
+    min: number | null;
+    max: number | null;
+    isSinglePrice?: boolean;
+  };
+  originalPrice?: number;
+  averageRating?: number;
+  reviewCount?: number;
+  isNew?: boolean;
+  salePercentage?: number;
+  discountPercent?: number;
+  hasDiscount?: boolean;
+  maxDiscountPercent?: number;
+  variantSummary?: {
+    priceRange?: {
+      min: number | null;
+      max: number | null;
+      isSinglePrice?: boolean;
+    };
+  };
 }
 
 interface ProductAttributes {
@@ -542,6 +573,106 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
     } finally {
       setLikeLoading(false);
     }
+  };
+
+  // Convert ProductType to ProductCardProduct
+  const convertToProductCardFormat = (
+    products: Product[]
+  ): ProductCardProduct[] => {
+    return products.map((p) => {
+      // Calculate price range safely
+      const variants = Array.isArray(p.variants) ? p.variants : [];
+      const prices = variants
+        .filter((v) => v && typeof v === "object" && v.priceFinal !== undefined)
+        .map((v) => v.priceFinal);
+
+      // Fallback to variantSummary if available
+      let priceRange = {
+        min: 0,
+        max: 0,
+        isSinglePrice: true,
+      };
+
+      if (prices.length > 0) {
+        priceRange = {
+          min: Math.min(...prices),
+          max: Math.max(...prices),
+          isSinglePrice: Math.min(...prices) === Math.max(...prices),
+        };
+      } else if (p.variantSummary?.priceRange) {
+        const min = p.variantSummary.priceRange.min || 0;
+        const max = p.variantSummary.priceRange.max || 0;
+        const isSinglePrice =
+          p.variantSummary.priceRange.isSinglePrice !== false;
+        priceRange = { min, max, isSinglePrice };
+      } else if (p.price !== undefined) {
+        priceRange = {
+          min: p.price,
+          max: p.price,
+          isSinglePrice: true,
+        };
+      }
+
+      // Handle images safely
+      const images = Array.isArray(p.images) ? p.images : [];
+      let mainImage = "";
+
+      if (images.length > 0) {
+        const main = images.find((img) => img.isMain === true) || images[0];
+        mainImage = main?.url || "";
+      }
+
+      // Xử lý brand.logo để đảm bảo đúng định dạng yêu cầu
+      let brandLogo: { url: string; public_id: string } | undefined = undefined;
+      if (p.brand?.logo) {
+        if (typeof p.brand.logo === "string") {
+          brandLogo = { url: p.brand.logo, public_id: "" };
+        } else if (typeof p.brand.logo === "object") {
+          const logoObj = p.brand.logo as any;
+          brandLogo = {
+            url: logoObj.url || "",
+            public_id: logoObj.public_id || "",
+          };
+        }
+      }
+
+      // Ensure all properties match ProductCardProduct interface from the service
+      return {
+        _id: p._id,
+        name: p.name || "",
+        slug: p.slug || "",
+        images: Array.isArray(p.images)
+          ? p.images.map((img) => ({
+              url: img.url || "",
+              public_id: img.public_id || "",
+              isMain: img.isMain || false,
+              displayOrder: img.displayOrder || 0,
+            }))
+          : [],
+        category: p.category || { _id: "", name: "Chưa phân loại" },
+        brand: {
+          _id: p.brand?._id || "",
+          name: p.brand?.name || "Chưa có thương hiệu",
+          logo: brandLogo, // Sử dụng brandLogo đã được xử lý
+        },
+        priceRange: {
+          min: priceRange.min || 0,
+          max: priceRange.max || 0,
+          isSinglePrice: priceRange.isSinglePrice !== false,
+        },
+        originalPrice: p.originalPrice || priceRange.max || 0,
+        averageRating: p.averageRating || p.rating || 0,
+        reviewCount: p.reviewCount || p.numReviews || 0,
+        isNew: p.isNew || false,
+        salePercentage: p.salePercentage || p.discountPercent || 0,
+        stockStatus: p.stockStatus,
+        totalQuantity: p.totalQuantity,
+        price: p.price || priceRange.min || 0,
+        discountPercent: p.discountPercent || p.maxDiscountPercent || 0,
+        hasDiscount: p.hasDiscount || (p.discountPercent || 0) > 0,
+        mainImage: mainImage,
+      };
+    });
   };
 
   return (
@@ -995,17 +1126,23 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
               ))}
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-                {(relatedProducts.length > 0
-                  ? relatedProducts
-                  : similarProducts || []
-                )
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+              {(() => {
+                // Use relatedProducts first, fallback to similarProducts
+                const sourceProducts =
+                  relatedProducts.length > 0
+                    ? relatedProducts
+                    : similarProducts || [];
+
+                const displayProducts =
+                  convertToProductCardFormat(sourceProducts);
+
+                return displayProducts
                   .slice(0, 10)
                   .map((relatedProduct, index) => (
                     <ProductCard
                       key={relatedProduct._id || `product-${index}`}
-                      product={relatedProduct as ProductType}
+                      product={relatedProduct}
                       onClick={() =>
                         navigate(
                           `/product/${
@@ -1014,26 +1151,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                         )
                       }
                     />
-                  ))}
-              </div>
-              {/* View all button */}
-              {(relatedProducts.length > 10 ||
-                (similarProducts && similarProducts.length > 10)) && (
-                <div className="text-center mt-8">
-                  <button
-                    onClick={() => {
-                      const categoryId =
-                        product.category?._id ||
-                        (product.category as { id?: string })?.id;
-                      navigate(`/products?category=${categoryId}`);
-                    }}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    Xem tất cả sản phẩm cùng loại
-                  </button>
-                </div>
-              )}
-            </>
+                  ));
+              })()}
+            </div>
           )}
         </div>
       )}

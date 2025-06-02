@@ -1,184 +1,216 @@
 import React, { useState, useEffect } from "react";
-import { Product } from "../../services/ProductServiceV2";
-import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { ProductCardProduct } from "../../services/ProductServiceV2";
+import { FaStar, FaRegStar } from "react-icons/fa";
 
 interface ProductCardProps {
-  product: Product;
-  onClick: () => void;
+  product: ProductCardProduct;
+  onClick?: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
+  // State cho hiệu ứng fade-in khi ảnh được tải
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  // State cho hiệu ứng slide ảnh
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Set up image slideshow
+  // Kiểm tra chắc chắn images là mảng và có nhiều hơn 1 phần tử
+  const hasMultipleImages =
+    Array.isArray(product.images) && product.images.length > 1;
+
+  // Hiệu ứng slide ảnh với tốc độ vừa phải (3 giây cho mỗi ảnh)
   useEffect(() => {
+    if (!hasMultipleImages) return;
+
     const interval = setInterval(() => {
-      if (product.images && product.images.length > 1) {
-        setCurrentImageIndex((prevIndex) =>
-          prevIndex === product.images.length - 1 ? 0 : prevIndex + 1
-        );
+      // Kiểm tra images tồn tại trước khi truy cập length
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        setCurrentImageIndex((prev) => (prev + 1) % product.images!.length);
+        // Reset trạng thái imageLoaded khi chuyển ảnh
+        setImageLoaded(false);
       }
-    }, 3000);
+    }, 3000); // Tốc độ chuyển ảnh vừa phải: 3 giây
 
     return () => clearInterval(interval);
-  }, [product.images]);
+  }, [product.images, hasMultipleImages]);
 
-  // Get product images array
-  const productImages =
-    product.images && product.images.length > 0
-      ? product.images
-      : [
-          {
-            url: "/image/product.jpg",
-            public_id: "default",
-            isMain: true,
-            displayOrder: 0,
-          },
-        ];
+  // Get image URL to display với kiểm tra null/undefined
+  const imageUrl =
+    hasMultipleImages && Array.isArray(product.images)
+      ? product.images[currentImageIndex]?.url || ""
+      : product.mainImage ||
+        (Array.isArray(product.images) && product.images.length > 0
+          ? product.images[0]?.url
+          : "/placeholder.jpg");
 
-  // Get current image URL
-  const currentImage =
-    productImages[currentImageIndex]?.url || "/image/product.jpg";
-
-  // Format price range or single price
-  const formatPrice = () => {
-    if (product.variantSummary?.priceRange) {
-      const { min, max, isSinglePrice } = product.variantSummary.priceRange;
-
-      if (isSinglePrice || (min === max && min !== null)) {
-        return `${(min || 0).toLocaleString("vi-VN")}đ`;
-      } else if (min !== null && max !== null) {
-        return `${min.toLocaleString("vi-VN")}đ - ${max.toLocaleString(
-          "vi-VN"
-        )}đ`;
-      }
+  // Xử lý khoảng giá
+  const renderPrice = () => {
+    // Nếu có khoảng giá và không phải giá đơn
+    if (product.priceRange && !product.priceRange.isSinglePrice) {
+      return (
+        <div className="flex flex-col">
+          {product.hasDiscount ? (
+            <>
+              <span className="text-red-600 font-bold text-base md:text-lg">
+                {product.priceRange.min.toLocaleString()} -{" "}
+                {product.priceRange.max.toLocaleString()}đ
+              </span>
+              {product.originalPrice && (
+                <span className="text-gray-400 text-sm line-through">
+                  Gốc: {product.originalPrice.toLocaleString()}đ
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-gray-900 font-bold text-base md:text-lg">
+              {product.priceRange.min.toLocaleString()} -{" "}
+              {product.priceRange.max.toLocaleString()}đ
+            </span>
+          )}
+        </div>
+      );
     }
 
-    return `${(product.price || 0).toLocaleString("vi-VN")}đ`;
-  };
-
-  // Hàm render màu sắc
-  const renderColors = (variantSummary?: Product["variantSummary"]) => {
-    if (!variantSummary || !variantSummary.colors) return null;
+    // Trường hợp giá đơn hoặc fallback về price
     return (
-      <div className="flex justify-center items-center mt-2 gap-2">
-        {variantSummary.colors.map((color, idx) =>
-          color.type === "solid" ? (
-            <div
-              key={idx}
-              className="w-6 h-6 rounded-full border"
-              style={{ backgroundColor: color.code || "#fff" }}
-            ></div>
-          ) : (
-            <div
-              key={idx}
-              className="w-6 h-6 rounded-full border relative overflow-hidden flex-shrink-0"
-              style={{ minWidth: 24, minHeight: 24 }}
-            >
-              <div
-                style={{
-                  backgroundColor: color.colors?.[0] || "#fff",
-                  width: "100%",
-                  height: "100%",
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  clipPath: "inset(0 50% 0 0)",
-                }}
-              />
-              <div
-                style={{
-                  backgroundColor: color.colors?.[1] || "#fff",
-                  width: "100%",
-                  height: "100%",
-                  position: "absolute",
-                  right: 0,
-                  top: 0,
-                  clipPath: "inset(0 0 0 50%)",
-                }}
-              />
-            </div>
-          )
+      <div className="flex flex-col">
+        {product.hasDiscount ? (
+          <>
+            <span className="text-red-600 font-bold text-base md:text-lg">
+              {(product.price || product.priceRange?.min || 0).toLocaleString()}
+              đ
+            </span>
+            {product.originalPrice && (
+              <span className="text-gray-400 text-sm line-through">
+                {product.originalPrice.toLocaleString()}đ
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-gray-900 font-bold text-base md:text-lg">
+            {(product.price || product.priceRange?.min || 0).toLocaleString()}đ
+          </span>
         )}
       </div>
     );
   };
 
-  // Hàm render đánh giá sao
-  const renderStars = (rating: number) => {
+  // Hiển thị rating bằng các icon sao
+  const renderRating = () => {
+    // Nếu không có review count thì vẫn hiển thị 5 sao rỗng
+    // Chỉ ẩn phần rating khi cả hai điều kiện đều không tồn tại
+    if (
+      product.reviewCount === undefined &&
+      product.averageRating === undefined
+    ) {
+      return null;
+    }
+
+    // Lấy rating, nếu không có thì mặc định là 0
+    const rating = product.averageRating || 0;
+    const reviewCount = product.reviewCount || 0;
     const stars = [];
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
 
-    // Render full stars
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<FaStar key={`full-${i}`} className="text-yellow-400" />);
+    // Tạo 5 sao đánh giá
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        i <= rating ? (
+          <FaStar key={i} className="text-yellow-400 w-4 h-4" />
+        ) : (
+          <FaRegStar key={i} className="text-yellow-400 w-4 h-4" />
+        )
+      );
     }
 
-    // Render half star if needed
-    if (halfStar) {
-      stars.push(<FaStarHalfAlt key="half" className="text-yellow-400" />);
-    }
-
-    // Render empty stars
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(<FaRegStar key={`empty-${i}`} className="text-yellow-400" />);
-    }
-
-    return stars;
+    return (
+      <div className="flex items-center mt-2 gap-1">
+        <div className="flex">{stars}</div>
+        <span className="text-xs text-gray-600 ml-1">({reviewCount})</span>
+      </div>
+    );
   };
 
   return (
     <div
-      className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+      className="group cursor-pointer bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden h-full flex flex-col transform hover:translate-y-[-4px]"
       onClick={onClick}
     >
-      <div className="aspect-square overflow-hidden relative">
+      {/* Phần ảnh sản phẩm với hiệu ứng chuyển đổi mềm mại */}
+      <div className="aspect-square w-full overflow-hidden bg-gray-50 relative">
         <img
-          src={currentImage}
+          src={imageUrl}
           alt={product.name}
-          className="w-full h-full object-cover hover:scale-105 transition-transform"
+          className={`w-full h-full object-contain object-center transition-all duration-700 ease-in-out hover:scale-105 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            transformOrigin: "center center",
+          }}
+          onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.onerror = null;
-            target.src = "/image/product.jpg";
+            target.src = "/placeholder.jpg";
+            setImageLoaded(true);
           }}
         />
-        {productImages.length > 1 && (
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-            {productImages.map((_, idx) => (
+
+        {/* Hiển thị các chỉ báo slide nếu có nhiều ảnh */}
+        {hasMultipleImages && Array.isArray(product.images) && (
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 z-10">
+            {product.images.map((_, idx) => (
               <div
                 key={idx}
-                className={`w-2 h-2 rounded-full ${
-                  idx === currentImageIndex ? "bg-white" : "bg-gray-400"
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  currentImageIndex === idx
+                    ? "w-3 bg-gray-800"
+                    : "w-1.5 bg-gray-400"
                 }`}
               />
             ))}
           </div>
         )}
+
+        {/* Sale tag - Sửa lỗi kiểm tra undefined */}
+        {typeof product.salePercentage === "number" &&
+          product.salePercentage > 0 && (
+            <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2.5 py-1.5 rounded">
+              -{product.salePercentage}%
+            </div>
+          )}
+
+        {/* Stock status */}
+        {product.stockStatus === "out_of_stock" && (
+          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-center py-1.5 text-sm font-medium">
+            Hết hàng
+          </div>
+        )}
+        {product.stockStatus === "low_stock" && (
+          <div className="absolute bottom-0 left-0 right-0 bg-orange-500 bg-opacity-70 text-white text-center py-1.5 text-sm font-medium">
+            Sắp hết hàng
+          </div>
+        )}
       </div>
-      <div className="p-4">
-        <h3 className="text-lg font-semibold mb-2 line-clamp-2">
+
+      {/* Thông tin sản phẩm - cải thiện độ rõ ràng */}
+      <div className="p-4 flex flex-col flex-1">
+        {/* Thương hiệu */}
+        {product.brand && (
+          <span className="text-sm font-medium text-gray-500 mb-1.5">
+            {product.brand.name}
+          </span>
+        )}
+
+        {/* Tên sản phẩm - Tăng kích thước và độ đậm */}
+        <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2 line-clamp-2 flex-grow leading-snug">
           {product.name}
         </h3>
 
-        {/* Đánh giá */}
-        <div className="flex items-center mb-2">
-          <div className="flex mr-1">{renderStars(product.rating || 0)}</div>
-          <span className="text-gray-500 text-sm">
-            ({product.numReviews || 0})
-          </span>
+        {/* Giá và đánh giá */}
+        <div className="mt-auto pt-2">
+          {renderPrice()}
+          {renderRating()}
         </div>
-
-        <p className="text-2xl font-bold text-red-600 mb-2">{formatPrice()}</p>
-        {product.originalPrice &&
-          product.originalPrice > (product.price || 0) && (
-            <p className="text-sm text-gray-500 line-through">
-              {product.originalPrice.toLocaleString("vi-VN")}đ
-            </p>
-          )}
-        {renderColors(product.variantSummary)}
       </div>
     </div>
   );

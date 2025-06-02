@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import ProductCard from "../../../components/ProductCard/ProductCard";
 import {
   Product,
   productPublicService,
+  convertToProductCardProduct,
 } from "../../../services/ProductServiceV2";
 import { publicCouponService } from "../../../services/CouponServiceV2";
 import { Coupon } from "../../../types/coupon";
-import ProductCard from "../../../components/ProductCard/ProductCard";
 import { toast } from "react-hot-toast";
 import {
   FiChevronRight,
@@ -204,11 +207,6 @@ const LandingPage: React.FC = () => {
     );
   }
 
-  // Helper function để lấy ID hoặc slug sản phẩm
-  const getProductIdentifier = (product: Product): string => {
-    return product.slug || product._id || "";
-  };
-
   // Component Section Title
   const SectionTitle = ({
     title,
@@ -243,13 +241,15 @@ const LandingPage: React.FC = () => {
       {products && products.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {products.map((product) => (
-            <ProductCard
-              key={getProductIdentifier(product)}
-              product={product}
-              onClick={() =>
-                navigate(`/product/${getProductIdentifier(product)}`)
-              }
-            />
+            <div key={product._id} className="px-2">
+              <ProductCard
+                product={convertToProductCardProduct(product)}
+                onClick={() => {
+                  navigate(`/product/${product.slug || product._id}`);
+                  window.scrollTo(0, 0); // Add this line to scroll to top
+                }}
+              />
+            </div>
           ))}
         </div>
       ) : (
@@ -445,10 +445,18 @@ const LandingPage: React.FC = () => {
           linkTo="/products?sort=popular"
           linkText="Xem tất cả"
         />
-        <ProductGrid
-          products={bestSellers}
-          emptyMessage="Không có sản phẩm bán chạy nào"
-        />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+          {bestSellers.map((product) => (
+            <ProductCard
+              key={product._id}
+              product={convertToProductCardProduct(product)}
+              onClick={() => {
+                navigate(`/product/${product.slug || product._id}`);
+                window.scrollTo(0, 0); // Add this line to scroll to top
+              }}
+            />
+          ))}
+        </div>
       </section>
 
       {/* Sản phẩm mới nhất */}
@@ -524,7 +532,7 @@ const LandingPage: React.FC = () => {
               <ul className="space-y-2">
                 <li>
                   <Link
-                    to="/category/men"
+                    to="products?gender=male"
                     className="text-gray-300 hover:text-white transition-colors"
                   >
                     Giày Nam
@@ -532,34 +540,10 @@ const LandingPage: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/category/women"
+                    to="products?gender=female"
                     className="text-gray-300 hover:text-white transition-colors"
                   >
                     Giày Nữ
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/category/kids"
-                    className="text-gray-300 hover:text-white transition-colors"
-                  >
-                    Giày Trẻ Em
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/category/sports"
-                    className="text-gray-300 hover:text-white transition-colors"
-                  >
-                    Giày Thể Thao
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/category/casual"
-                    className="text-gray-300 hover:text-white transition-colors"
-                  >
-                    Giày Casual
                   </Link>
                 </li>
               </ul>
@@ -635,13 +619,16 @@ const LandingPage: React.FC = () => {
           </div>
 
           {/* Payment Methods */}
-          <div className="border-t border-gray-700 pt-8 pb-4">
-            <p className="text-sm font-medium mb-4">Chấp nhận thanh toán</p>
-            <div className="flex flex-wrap gap-3">
-              <div className="bg-white p-2 rounded h-8 w-12"></div>
-              <div className="bg-white p-2 rounded h-8 w-12"></div>
-              <div className="bg-white p-2 rounded h-8 w-12"></div>
-              <div className="bg-white p-2 rounded h-8 w-12"></div>
+          <div className="border-t border-gray-700 pt-8 pb-6">
+            <p className="text-sm font-medium mb-4 text-center">
+              Chấp nhận thanh toán
+            </p>
+            <div className="flex justify-center items-center">
+              <img
+                src="/image/vnpay.jpg"
+                alt="VNPay"
+                className="h-12 md:h-14 rounded-md bg-white object-contain p-2 shadow-sm hover:shadow-md transition-shadow"
+              />
             </div>
           </div>
 

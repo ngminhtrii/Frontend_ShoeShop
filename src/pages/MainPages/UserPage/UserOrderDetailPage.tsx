@@ -59,7 +59,14 @@ const UserOrderDetailPage: React.FC = () => {
       const response = await userOrderService.cancelOrder(order._id, {
         reason: reason,
       });
-      toast.success(response.data.data.message);
+
+      // Hiển thị thông báo thành công từ response
+      if (response.data && response.data.success) {
+        toast.success(
+          response.data.message || "Yêu cầu hủy đơn hàng đã được gửi thành công"
+        );
+      }
+
       fetchOrderDetail(); // Refresh order data
       setShowCancelModal(false);
     } catch (error: any) {

@@ -135,14 +135,6 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
           <p className="text-gray-500">
             Hãy là người đầu tiên đánh giá sản phẩm này
           </p>
-          {isAuthenticated && (
-            <button
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              onClick={() => navigate("/user-reviews")}
-            >
-              Viết đánh giá
-            </button>
-          )}
         </div>
       ) : (
         <div className="divide-y divide-gray-100">

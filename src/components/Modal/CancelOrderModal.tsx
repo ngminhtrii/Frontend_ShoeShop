@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FaTimes, FaExclamationTriangle } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 interface CancelOrderModalProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validation
@@ -39,7 +40,20 @@ const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
     }
 
     setError("");
-    onConfirm(reason.trim());
+
+    try {
+      await onConfirm(reason.trim());
+      // Reset form sau khi thành công
+      setReason("");
+      setError("");
+    } catch (error: any) {
+      // Hiển thị lỗi nếu có
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Có lỗi xảy ra khi hủy đơn hàng";
+      toast.error(errorMessage);
+    }
   };
 
   const handleClose = () => {
