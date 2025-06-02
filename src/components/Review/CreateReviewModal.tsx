@@ -50,31 +50,58 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
 
     setLoading(true);
     try {
-      console.log("Đang gửi đánh giá...", {
+      const reviewData = {
         orderId,
         orderItemId,
         rating,
         content: content.trim(),
-      });
+      };
 
-      const response = await reviewApi.createReview({
-        orderId,
-        orderItemId,
-        rating,
-        content: content.trim(),
-      });
+      console.log("Đang gửi đánh giá với dữ liệu:", reviewData);
 
-      if (response.data.success) {
-        toast.success("Đánh giá sản phẩm thành công");
+      const response = await reviewApi.createReview(reviewData);
+
+      console.log("Response từ API:", response);
+
+      // Kiểm tra response structure linh hoạt hơn
+      const responseData = response.data || response;
+      const isSuccess =
+        responseData.success === true ||
+        response.status === 200 ||
+        response.status === 201;
+
+      if (isSuccess) {
+        toast.success(responseData.message || "Đánh giá sản phẩm thành công");
         setRating(5);
         setContent("");
         onSuccess();
         onClose();
+      } else {
+        // Nếu không success nhưng có message
+        const errorMessage = responseData.message || "Không thể tạo đánh giá";
+        toast.error(errorMessage);
       }
     } catch (error: any) {
       console.error("Lỗi khi gửi đánh giá:", error);
-      const errorMessage =
-        error.response?.data?.message || "Không thể tạo đánh giá";
+
+      // Xử lý các loại lỗi khác nhau
+      let errorMessage = "Không thể tạo đánh giá";
+
+      if (error.response) {
+        // Lỗi từ server (4xx, 5xx)
+        const errorData = error.response.data;
+        errorMessage =
+          errorData?.message ||
+          errorData?.error ||
+          `Lỗi server: ${error.response.status}`;
+      } else if (error.request) {
+        // Lỗi network
+        errorMessage = "Lỗi kết nối mạng. Vui lòng thử lại.";
+      } else {
+        // Lỗi khác
+        errorMessage = error.message || "Đã xảy ra lỗi không xác định";
+      }
+
       toast.error(errorMessage);
     } finally {
       setLoading(false);
