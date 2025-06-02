@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import Modal from "react-modal";
-import { FaStar, FaRegStar, FaImage } from "react-icons/fa";
+import { FaStar, FaRegStar } from "react-icons/fa";
 import { toast } from "react-hot-toast";
-import { reviewApi } from "../../services/ReviewService"; // Sử dụng ReviewService thay vì ReviewServiceV2
+import { reviewApi } from "../../services/ReviewService";
 
 // Đảm bảo modal có thể truy cập được cho screen readers
 Modal.setAppElement("#root");
@@ -43,8 +43,8 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
       return;
     }
 
-    if (content.trim().length < 2) {
-      toast.error("Nội dung đánh giá phải có ít nhất 2 ký tự");
+    if (content.trim().length < 10) {
+      toast.error("Nội dung đánh giá phải có ít nhất 10 ký tự");
       return;
     }
 
@@ -58,9 +58,7 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
       };
 
       console.log("Đang gửi đánh giá với dữ liệu:", reviewData);
-
       const response = await reviewApi.createReview(reviewData);
-
       console.log("Response từ API:", response);
 
       // Kiểm tra response structure linh hoạt hơn
@@ -77,28 +75,23 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
         onSuccess();
         onClose();
       } else {
-        // Nếu không success nhưng có message
         const errorMessage = responseData.message || "Không thể tạo đánh giá";
         toast.error(errorMessage);
       }
     } catch (error: any) {
       console.error("Lỗi khi gửi đánh giá:", error);
 
-      // Xử lý các loại lỗi khác nhau
       let errorMessage = "Không thể tạo đánh giá";
 
       if (error.response) {
-        // Lỗi từ server (4xx, 5xx)
         const errorData = error.response.data;
         errorMessage =
           errorData?.message ||
           errorData?.error ||
           `Lỗi server: ${error.response.status}`;
       } else if (error.request) {
-        // Lỗi network
         errorMessage = "Lỗi kết nối mạng. Vui lòng thử lại.";
       } else {
-        // Lỗi khác
         errorMessage = error.message || "Đã xảy ra lỗi không xác định";
       }
 
@@ -136,8 +129,8 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="flex items-center justify-center w-full h-full bg-gray-200">
-              <FaImage className="text-gray-400" />
+            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+              No image
             </div>
           )}
         </div>
@@ -148,7 +141,10 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <div className="flex space-x-2 justify-center mb-1">
+          <label className="block text-sm font-medium mb-2">
+            Đánh giá của bạn:
+          </label>
+          <div className="flex items-center space-x-1 mb-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
@@ -156,45 +152,51 @@ const CreateReviewModal: React.FC<CreateReviewModalProps> = ({
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
-                className="text-2xl focus:outline-none transition-transform hover:scale-110"
+                className="text-2xl hover:scale-110 transition-transform"
               >
-                {(hoverRating ? star <= hoverRating : star <= rating) ? (
+                {star <= (hoverRating || rating) ? (
                   <FaStar className="text-yellow-400" />
                 ) : (
-                  <FaRegStar className="text-yellow-400" />
+                  <FaRegStar className="text-gray-300" />
                 )}
               </button>
             ))}
           </div>
-          <div className="text-center text-sm text-gray-500">
+          <p className="text-sm text-gray-600">
             {ratingText[hoverRating || rating]}
-          </div>
+          </p>
         </div>
 
         <div>
+          <label className="block text-sm font-medium mb-2">
+            Nội dung đánh giá:
+          </label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-            rows={3}
-            placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."
-            required
-          ></textarea>
+            placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm... (ít nhất 10 ký tự)"
+            className="w-full p-2 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            rows={4}
+            maxLength={500}
+          />
+          <div className="text-xs text-gray-500 mt-1">
+            {content.length}/500 ký tự
+          </div>
         </div>
 
-        <div className="flex justify-end space-x-3 pt-2">
+        <div className="flex space-x-2 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-100"
             disabled={loading}
+            className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
           >
             Hủy
           </button>
           <button
             type="submit"
-            disabled={loading}
-            className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 min-w-[100px]"
+            disabled={loading || content.trim().length < 10}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Đang gửi..." : "Gửi đánh giá"}
           </button>

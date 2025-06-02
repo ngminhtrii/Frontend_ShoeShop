@@ -181,16 +181,31 @@ export interface VnpayCallbackParams {
 
 export interface CancelRequest {
   _id: string;
-  order: string;
-  user: string;
+  order: {
+    _id: string;
+    code: string;
+    status: "pending" | "confirmed" | "shipping" | "delivered" | "cancelled";
+    totalAfterDiscountAndShipping: number;
+    user: { name: string; email: string };
+    payment: {
+      method: "COD" | "VNPAY";
+      paymentStatus: "pending" | "paid" | "failed";
+      transactionId?: string;
+    };
+    createdAt: string;
+  };
+  user: {
+    name: string;
+    email: string;
+    phone: string;
+    avatar?: { url: string };
+  };
   reason: string;
-  description?: string;
   status: "pending" | "approved" | "rejected";
-  processedBy?: string;
-  processedAt?: string;
-  adminNote?: string;
+  adminResponse?: string;
   createdAt: string;
   updatedAt: string;
+  resolvedAt?: string;
 }
 
 export interface CancelRequestsResponse {

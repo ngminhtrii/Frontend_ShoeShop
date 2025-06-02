@@ -49,7 +49,7 @@ export interface ReviewQuery {
   sort?: string;
 }
 
-// Update interface cho sản phẩm có thể đánh giá để khớp với API response
+// Interface cho sản phẩm có thể đánh giá
 export interface ReviewableProduct {
   orderItemId: string;
   orderId: string;
@@ -57,34 +57,32 @@ export interface ReviewableProduct {
   product: {
     _id: string;
     name: string;
+    slug: string;
     images?: Array<{
       url: string;
       public_id: string;
       isMain?: boolean;
-      displayOrder?: number;
-      _id: string;
     }>;
-    slug: string;
   };
   variant: {
     _id: string;
     color: {
       _id: string;
       name: string;
-      code?: string | null;
+      code: string;
     };
+    price: number;
   };
   size: {
     _id: string;
-    value: number | string;
+    value: number;
     description?: string;
   };
-  quantity: number;
   price: number;
-  image: string;
+  quantity: number;
+  image?: string;
   deliveredAt: string;
-  canReview: boolean;
-  reviewExpiresAt: string | null;
+  reviewExpiresAt?: string;
   daysLeftToReview: number;
 }
 

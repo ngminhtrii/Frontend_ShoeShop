@@ -33,7 +33,7 @@ export const reviewApi = {
       });
   },
 
-  // Cập nhật đánh giá theo reviewId
+  // Cập nhật đánh giá
   updateReview: (reviewId: string, data: { rating: number; content: string }) =>
     axiosInstanceAuth.put(`/api/v1/users/reviews/${reviewId}`, data),
 
@@ -45,7 +45,9 @@ export const reviewApi = {
   likeReview: (reviewId: string) =>
     axiosInstanceAuth.post(`/api/v1/users/reviews/${reviewId}/like`),
 
-  // Lấy danh sách sản phẩm có thể đánh giá (từ đơn hàng đã giao thành công)
+  // Lấy danh sách sản phẩm có thể đánh giá
   getReviewableProducts: () =>
     axiosInstanceAuth.get("/api/v1/users/reviews/reviewable-products"),
 };
+
+export default reviewApi;

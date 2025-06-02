@@ -188,15 +188,15 @@ const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <FiLock className="text-4xl text-blue-600" />
+          <FiLock className="text-4xl text-gray-600" />
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
           Đặt lại mật khẩu
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-gray-600 leading-relaxed">
           Vui lòng nhập mật khẩu mới cho tài khoản của bạn
         </p>
       </div>
@@ -248,7 +248,7 @@ const ResetPasswordPage: React.FC = () => {
                   onChange={handleInputChange}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     errors.password ? "border-red-300" : "border-gray-300"
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm`}
                   placeholder="Nhập mật khẩu mới"
                 />
                 <button
@@ -287,7 +287,7 @@ const ResetPasswordPage: React.FC = () => {
                     errors.confirmPassword
                       ? "border-red-300"
                       : "border-gray-300"
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm`}
                   placeholder="Nhập lại mật khẩu mới"
                 />
                 <button
@@ -326,7 +326,7 @@ const ResetPasswordPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Đang đặt lại..." : "Đặt lại mật khẩu"}
               </button>
@@ -337,7 +337,7 @@ const ResetPasswordPage: React.FC = () => {
           <div className="mt-6">
             <Link
               to="/login"
-              className="flex items-center justify-center space-x-2 text-sm text-blue-600 hover:text-blue-500"
+              className="flex items-center justify-center space-x-2 text-sm text-gray-600 hover:text-gray-500"
             >
               <FiArrowLeft />
               <span>Quay lại đăng nhập</span>

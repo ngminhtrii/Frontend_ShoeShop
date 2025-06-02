@@ -47,4 +47,22 @@ export const orderApi = {
       `http://localhost:5005/api/v1/admin/orders/${orderId}/status`,
       data
     ),
+
+  // Lấy danh sách yêu cầu hủy đơn hàng của user
+  getUserCancelRequests: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) =>
+    axiosInstanceAuth.get(
+      "http://localhost:5005/api/v1/orders/user-cancel-requests",
+      { params }
+    ),
+
+  // Gửi yêu cầu hủy đơn hàng
+  cancelOrder: (orderId: string, data: { reason: string }) =>
+    axiosInstanceAuth.post(
+      `http://localhost:5005/api/v1/orders/${orderId}/cancel`,
+      data
+    ),
 };

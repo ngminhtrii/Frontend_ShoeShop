@@ -5,6 +5,7 @@ import {
   FaHeart,
   FaSignOutAlt,
   FaStar,
+  FaTimesCircle,
 } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { authenticateApi } from "../../services/AuthenticationService";
@@ -36,6 +37,11 @@ const Sidebar: React.FC = () => {
       path: "/user-manage-order",
       icon: <FaClipboardList className="text-xl" />,
       label: "Quản lý đơn hàng",
+    },
+    {
+      path: "/user-cancel-requests",
+      icon: <FaTimesCircle className="text-xl" />,
+      label: "Yêu cầu hủy đơn",
     },
     {
       path: "/user-reviews",

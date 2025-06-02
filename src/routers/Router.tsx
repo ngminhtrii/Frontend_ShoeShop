@@ -16,6 +16,8 @@ import ListOrderPage from "../pages/AdminPages/AdminOrders/OrderPage";
 import CartPage from "../pages/MainPages/CartPage/CartPage";
 import UserInformationPage from "../pages/MainPages/UserPage/UserInformationPage";
 import UserManageOrderPage from "../pages/MainPages/UserPage/UserManageOrderPage";
+import UserOrderDetailPage from "../pages/MainPages/UserPage/UserOrderDetailPage";
+import UserCancelRequestsPage from "../pages/MainPages/UserPage/UserCancelRequestsPage";
 import UserReviewPage from "../pages/MainPages/UserPage/UserReviewPage";
 import LikePage from "../pages/MainPages/LikePage/LikePage";
 import ProductPage from "../pages/AdminPages/ProductPage/ProductPage";
@@ -88,6 +90,22 @@ const AppRouter = () => {
           element={
             <AuthGuard>
               <UserManageOrderPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="user-order/:orderId"
+          element={
+            <AuthGuard>
+              <UserOrderDetailPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="user-cancel-requests"
+          element={
+            <AuthGuard>
+              <UserCancelRequestsPage />
             </AuthGuard>
           }
         />

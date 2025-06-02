@@ -172,7 +172,6 @@ const UserReviewPage: React.FC = () => {
 
       console.log("Đang gửi đánh giá:", reviewData);
 
-      // Sử dụng trực tiếp reviewApi thay vì ReviewServiceV2
       const response = await reviewApi.createReview(reviewData);
 
       console.log("Phản hồi từ server:", response);
