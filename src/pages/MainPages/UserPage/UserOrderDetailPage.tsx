@@ -5,7 +5,8 @@ import OrderCard from "../../../components/User/OrderCard";
 import CancelOrderModal from "../../../components/Modal/CancelOrderModal";
 import RepayOrderModal from "../../../components/Modal/RepayOrderModal";
 import { userOrderService, Order } from "../../../services/OrderServiceV2";
-import { toast } from "react-toastify";
+// Thay đổi từ react-toastify sang react-hot-toast
+import toast from "react-hot-toast";
 import {
   FaArrowLeft,
   FaCalendarAlt,
@@ -60,11 +61,17 @@ const UserOrderDetailPage: React.FC = () => {
         reason: reason,
       });
 
-      // Hiển thị thông báo thành công từ response
+      // Hiển thị thông báo chi tiết hơn từ response
       if (response.data && response.data.success) {
-        toast.success(
-          response.data.message || "Yêu cầu hủy đơn hàng đã được gửi thành công"
-        );
+        const orderNumber = order.code || orderId;
+        const statusMessage =
+          response.data.message ||
+          "Yêu cầu hủy đơn hàng đã được gửi thành công";
+
+        // Hiển thị toast với số đơn hàng để người dùng dễ nhận biết
+        toast.success(`Đơn hàng #${orderNumber}: ${statusMessage}`, {
+          duration: 5000, // Tương đương với autoClose: 5000 trong react-toastify
+        });
       }
 
       fetchOrderDetail(); // Refresh order data

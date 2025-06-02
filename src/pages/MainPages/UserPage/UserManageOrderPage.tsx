@@ -6,7 +6,8 @@ import CancelOrderModal from "../../../components/Modal/CancelOrderModal";
 import RepayOrderModal from "../../../components/Modal/RepayOrderModal";
 import { userOrderService } from "../../../services/OrderServiceV2";
 import { Order, OrderQuery } from "../../../services/OrderServiceV2";
-import { toast } from "react-toastify";
+// Thay đổi từ react-toastify sang react-hot-toast
+import toast from "react-hot-toast";
 
 const UserManageOrder: React.FC = () => {
   const navigate = useNavigate();
@@ -83,7 +84,11 @@ const UserManageOrder: React.FC = () => {
       // Hiển thị thông báo thành công từ response
       if (response.data && response.data.success) {
         toast.success(
-          response.data.message || "Yêu cầu hủy đơn hàng đã được gửi thành công"
+          response.data.message ||
+            "Yêu cầu hủy đơn hàng đã được gửi thành công",
+          {
+            duration: 5000, // Tương đương với autoClose: 5000 trong react-toastify
+          }
         );
       }
 

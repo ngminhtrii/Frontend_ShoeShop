@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FaTimes, FaExclamationTriangle } from "react-icons/fa";
-import { toast } from "react-toastify";
+// Thay đổi từ react-toastify sang react-hot-toast
+import toast from "react-hot-toast";
 
 interface CancelOrderModalProps {
   isOpen: boolean;
@@ -46,8 +47,9 @@ const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
       // Reset form sau khi thành công
       setReason("");
       setError("");
+      // Không cần toast ở đây vì đã được xử lý trong component cha (UserOrderDetailPage)
     } catch (error: any) {
-      // Hiển thị lỗi nếu có
+      // Đã có xử lý lỗi ở component cha, nhưng thêm xử lý ở đây để đảm bảo
       const errorMessage =
         error?.response?.data?.message ||
         error?.message ||

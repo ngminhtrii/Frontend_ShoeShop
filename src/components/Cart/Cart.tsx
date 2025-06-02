@@ -271,7 +271,7 @@ const Cart: React.FC = () => {
     []
   );
 
-  // Optimized quantity update
+  // Optimized quantity update - bỏ thêm ID vào updating khi tăng/giảm số lượng
   const updateQuantity = useCallback(
     (itemId: string, newQuantity: number, isImmediate = false) => {
       if (newQuantity < 1 || newQuantity > 99) return;
@@ -291,8 +291,6 @@ const Cart: React.FC = () => {
         newMap.set(itemId, newQuantity);
         return newMap;
       });
-
-      setUpdating((prev) => new Set([...prev, itemId]));
 
       if (isImmediate) {
         // Cancel debounce và gọi trực tiếp cho button click
@@ -353,7 +351,7 @@ const Cart: React.FC = () => {
     [optimisticQuantities, inputValues]
   );
 
-  // Thêm hàm xử lý nút tăng/giảm số lượng
+  // Thêm hàm xử lý nút tăng/giảm số lượng - không hiển thị loading
   const handleQuantityButtonClick = useCallback(
     (itemId: string, change: number) => {
       const currentItem = cart?.cartItems.find((item) => item._id === itemId);
