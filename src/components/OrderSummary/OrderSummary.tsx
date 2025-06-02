@@ -118,10 +118,8 @@ const OrderSummary: React.FC = () => {
 
         setSelectedItems(selected);
 
-        // Preview đơn hàng
-        const previewRes = await cartApi.previewBeforeOrder({
-          couponCode: couponCode || undefined,
-        });
+        // Preview đơn hàng KHÔNG có mã giảm giá ban đầu
+        const previewRes = await cartApi.previewBeforeOrder({});
 
         if (previewRes.data.success) {
           setPreviewData(previewRes.data.preview);
@@ -136,7 +134,7 @@ const OrderSummary: React.FC = () => {
     };
 
     fetchCartAndPreview();
-  }, [navigate, couponCode]);
+  }, [navigate]); // Loại bỏ couponCode khỏi dependency array
 
   // Lấy danh sách địa chỉ từ API user
   useEffect(() => {

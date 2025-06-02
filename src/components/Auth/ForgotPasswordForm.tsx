@@ -1,8 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import toast from "react-hot-toast"; // Thay đổi import
 
 const ForgotPasswordForm = () => {
   const navigate = useNavigate();
@@ -48,19 +47,38 @@ const ForgotPasswordForm = () => {
 
     setLoading(true);
     try {
+      console.log("Đang gửi yêu cầu quên mật khẩu với email:", email);
+
       const response = await axios.post(
         "http://localhost:5005/api/v1/auth/forgot-password",
         { email }
       );
 
-      if (response.data.success) {
-        toast.success("Link đặt lại mật khẩu đã được gửi đến email của bạn!");
+      console.log("Response từ server:", response.data);
+
+      // Kiểm tra response thành công
+      if (response.status === 200 || response.data.success) {
+        const message =
+          response.data.message ||
+          "Link đặt lại mật khẩu đã được gửi đến email của bạn!";
+        console.log("Hiển thị thông báo thành công:", message);
+
+        toast.success(message);
+
         // Chuyển hướng sau khi gửi thành công
         setTimeout(() => {
           navigate("/login");
         }, 3000);
+      } else {
+        // Trường hợp response không thành công
+        const errorMessage =
+          response.data.message || "Có lỗi xảy ra khi gửi yêu cầu";
+        console.log("Response không thành công:", errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error: any) {
+      console.error("Lỗi khi gửi yêu cầu quên mật khẩu:", error);
+
       // Xử lý thông báo lỗi chi tiết từ BE
       let errorMessage = "Không thể gửi yêu cầu đặt lại mật khẩu!";
       let fieldErrors: { email?: string; captcha?: string } = {};
@@ -82,8 +100,18 @@ const ForgotPasswordForm = () => {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
-        errorMessage = error.message;
+        if (
+          error.message.includes("Network Error") ||
+          error.code === "ERR_NETWORK"
+        ) {
+          errorMessage =
+            "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng!";
+        } else {
+          errorMessage = error.message;
+        }
       }
+
+      console.log("Hiển thị thông báo lỗi:", errorMessage);
 
       // Hiển thị lỗi
       setErrors({ ...errors, ...fieldErrors });
@@ -168,7 +196,6 @@ const ForgotPasswordForm = () => {
           </button>
         </div>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
