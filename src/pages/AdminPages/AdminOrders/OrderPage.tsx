@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-
-import { orderApi } from "../../../services/OrderService";
+import { adminOrderService } from "../../../services/OrderServiceV2";
 import CancelRequestList from "./CancelRequestList";
 
 interface Order {
@@ -29,7 +28,7 @@ const ListOrderPage: React.FC = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await orderApi.getAllAdminOrders();
+      const res = await adminOrderService.getAllOrders();
       setOrders(
         (res.data.orders || []).map((o: any) => ({
           _id: o._id,
@@ -89,11 +88,11 @@ const ListOrderPage: React.FC = () => {
 
   const handleViewDetails = async (order: Order) => {
     try {
-      const res = await orderApi.getAdminOrderById(order._id);
-      const o = res.data.data || res.data.order;
+      const res = await adminOrderService.getOrderDetail(order._id);
+      const o = res.data.data; // Remove fallback to res.data.order since it doesn't exist
       setSelectedOrder({
         _id: o._id,
-        orderCode: o.code || o.orderCode || o._id,
+        orderCode: o.code || o._id, // Remove o.orderCode since it doesn't exist in interface
         customerName: o.user?.name || o.shippingAddress?.name || "",
         address: [
           o.shippingAddress?.detail,
@@ -103,7 +102,7 @@ const ListOrderPage: React.FC = () => {
         ]
           .filter(Boolean)
           .join(", "),
-        phone: o.shippingAddress?.phone || o.user?.phone || "",
+        phone: o.shippingAddress?.phone || "", // Remove o.user?.phone since user interface doesn't have phone
         price: o.totalAfterDiscountAndShipping
           ? o.totalAfterDiscountAndShipping.toLocaleString("vi-VN") + " (VND)"
           : "",
@@ -159,7 +158,9 @@ const ListOrderPage: React.FC = () => {
 
   // Xử lý cập nhật trạng thái đơn hàng
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
-    await orderApi.updateOrderStatus(orderId, { status });
+    // Type assertion to match the expected union type
+    const validStatus = status as "confirmed" | "shipping" | "delivered";
+    await adminOrderService.updateOrderStatus(orderId, { status: validStatus });
     fetchOrders();
   };
 

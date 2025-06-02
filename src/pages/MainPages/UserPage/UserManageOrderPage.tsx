@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../../../components/User/Sidebar";
 import OrderCard from "../../../components/User/OrderCard";
 import CancelOrderModal from "../../../components/Modal/CancelOrderModal";
+import RepayOrderModal from "../../../components/Modal/RepayOrderModal";
 import { userOrderService } from "../../../services/OrderServiceV2";
 import { Order, OrderQuery } from "../../../services/OrderServiceV2";
 import { toast } from "react-toastify";
@@ -26,6 +27,9 @@ const UserManageOrder: React.FC = () => {
   // Modal states
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedOrderForCancel, setSelectedOrderForCancel] =
+    useState<Order | null>(null);
+  const [showRepayModal, setShowRepayModal] = useState(false);
+  const [selectedOrderForRepay, setSelectedOrderForRepay] =
     useState<Order | null>(null);
 
   const fetchOrders = async (status?: string) => {
@@ -95,22 +99,30 @@ const UserManageOrder: React.FC = () => {
     setSelectedOrderForCancel(null);
   };
 
-  const handleRepayOrder = async (orderId: string, orderCode: string) => {
-    if (
-      !window.confirm(`Bạn có chắc muốn thanh toán lại đơn hàng ${orderCode}?`)
-    ) {
-      return;
-    }
+  const handleRepayOrder = async (orderId: string) => {
+    const order = orders.find((o) => o._id === orderId);
+    if (!order) return;
 
-    setRepayLoading(orderId);
+    setSelectedOrderForRepay(order);
+    setShowRepayModal(true);
+  };
+
+  const handleConfirmRepay = async () => {
+    if (!selectedOrderForRepay) return;
+
+    setRepayLoading(selectedOrderForRepay._id);
     try {
-      const response = await userOrderService.repayOrder(orderId);
+      const response = await userOrderService.repayOrder(
+        selectedOrderForRepay._id
+      );
       if (response.data.data.paymentUrl) {
         window.location.href = response.data.data.paymentUrl;
       } else {
         toast.success("Đã gửi yêu cầu thanh toán lại");
         fetchOrders(activeTab);
       }
+      setShowRepayModal(false);
+      setSelectedOrderForRepay(null);
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Không thể thanh toán lại đơn hàng";
@@ -120,8 +132,10 @@ const UserManageOrder: React.FC = () => {
     }
   };
 
-  const handleViewDetail = (orderId: string) => {
-    navigate(`/user-order/${orderId}`);
+  const handleCloseRepayModal = () => {
+    if (repayLoading) return;
+    setShowRepayModal(false);
+    setSelectedOrderForRepay(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -170,6 +184,10 @@ const UserManageOrder: React.FC = () => {
       order.payment.paymentStatus === "pending" &&
       order.status === "pending"
     );
+  };
+
+  const handleViewDetail = (orderId: string) => {
+    navigate(`/user-order/${orderId}`);
   };
 
   const statusTabs = [
@@ -260,7 +278,7 @@ const UserManageOrder: React.FC = () => {
 
                     {canRepayOrder(order) && (
                       <button
-                        onClick={() => handleRepayOrder(order._id, order.code)}
+                        onClick={() => handleRepayOrder(order._id)}
                         disabled={repayLoading === order._id}
                         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -351,6 +369,16 @@ const UserManageOrder: React.FC = () => {
         onConfirm={handleConfirmCancel}
         orderCode={selectedOrderForCancel?.code || ""}
         loading={!!cancelLoading}
+      />
+
+      {/* Repay Order Modal */}
+      <RepayOrderModal
+        isOpen={showRepayModal}
+        onClose={handleCloseRepayModal}
+        onConfirm={handleConfirmRepay}
+        orderCode={selectedOrderForRepay?.code || ""}
+        orderAmount={selectedOrderForRepay?.totalAfterDiscountAndShipping || 0}
+        loading={!!repayLoading}
       />
     </div>
   );

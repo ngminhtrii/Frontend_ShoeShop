@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { orderApi } from "../../services/OrderService";
+import { userOrderService } from "../../services/OrderServiceV2";
 import { inforApi } from "../../services/InforService";
 
 interface Address {
@@ -44,7 +44,7 @@ const OrderSummary: React.FC = () => {
   const handleOrder = async () => {
     setLoading(true);
     try {
-      const res = await orderApi.createOrder({
+      const res = await userOrderService.createOrder({
         addressId,
         paymentMethod,
         note,

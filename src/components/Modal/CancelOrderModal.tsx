@@ -54,7 +54,7 @@ const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
     "Thay đổi ý định mua hàng",
     "Tìm được sản phẩm tương tự với giá tốt hơn",
     "Thay đổi sản phẩm/kích thước/màu sắc",
-    "San phẩm bị lỗi hoặc hỏng",
+    "Sản phẩm bị lỗi hoặc không đúng mô tả",
     "Khác (nhập lý do cụ thể)",
   ];
 

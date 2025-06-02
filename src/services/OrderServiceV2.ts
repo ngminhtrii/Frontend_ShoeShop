@@ -202,7 +202,7 @@ export interface CancelRequest {
   };
   reason: string;
   status: "pending" | "approved" | "rejected";
-  adminResponse?: string;
+  adminResponse?: string; // Make optional since it might not exist initially
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;

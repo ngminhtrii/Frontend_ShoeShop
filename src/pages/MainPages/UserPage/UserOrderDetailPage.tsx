@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../../components/User/Sidebar";
 import OrderCard from "../../../components/User/OrderCard";
 import CancelOrderModal from "../../../components/Modal/CancelOrderModal";
+import RepayOrderModal from "../../../components/Modal/RepayOrderModal";
 import { userOrderService, Order } from "../../../services/OrderServiceV2";
 import { toast } from "react-toastify";
 import {
@@ -23,6 +24,7 @@ const UserOrderDetailPage: React.FC = () => {
 
   // Modal states
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRepayModal, setShowRepayModal] = useState(false);
 
   const fetchOrderDetail = async () => {
     if (!orderId) return;
@@ -76,12 +78,11 @@ const UserOrderDetailPage: React.FC = () => {
 
   const handleRepayOrder = async () => {
     if (!order) return;
+    setShowRepayModal(true);
+  };
 
-    if (
-      !window.confirm(`Bạn có chắc muốn thanh toán lại đơn hàng ${order.code}?`)
-    ) {
-      return;
-    }
+  const handleConfirmRepay = async () => {
+    if (!order) return;
 
     setRepayLoading(true);
     try {
@@ -92,6 +93,7 @@ const UserOrderDetailPage: React.FC = () => {
         toast.success("Đã gửi yêu cầu thanh toán lại");
         fetchOrderDetail();
       }
+      setShowRepayModal(false);
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Không thể thanh toán lại đơn hàng";
@@ -99,6 +101,11 @@ const UserOrderDetailPage: React.FC = () => {
     } finally {
       setRepayLoading(false);
     }
+  };
+
+  const handleCloseRepayModal = () => {
+    if (repayLoading) return;
+    setShowRepayModal(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -509,6 +516,15 @@ const UserOrderDetailPage: React.FC = () => {
         onConfirm={handleConfirmCancel}
         orderCode={order?.code || ""}
         loading={cancelLoading}
+      />
+
+      <RepayOrderModal
+        isOpen={showRepayModal}
+        onClose={handleCloseRepayModal}
+        onConfirm={handleConfirmRepay}
+        orderCode={order?.code || ""}
+        orderAmount={order?.totalAfterDiscountAndShipping || 0}
+        loading={repayLoading}
       />
     </div>
   );

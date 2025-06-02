@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { orderApi } from "../../../services/OrderService";
+import { adminOrderService } from "../../../services/OrderServiceV2";
 
 interface CancelRequest {
   _id: string;
@@ -19,7 +19,7 @@ interface CancelRequest {
   };
   reason: string;
   status: string;
-  adminResponse: string;
+  adminResponse?: string; // Make optional to match service interface
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
@@ -34,8 +34,8 @@ const CancelRequestList: React.FC = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await orderApi.getCancelRequests();
-      setRequests(res.data.cancelRequests || []);
+      const res = await adminOrderService.getCancelRequests();
+      setRequests(res.data.data.cancelRequests || []);
     } catch {
       setRequests([]);
     } finally {
@@ -44,7 +44,7 @@ const CancelRequestList: React.FC = () => {
   };
 
   const handleApprove = async (id: string) => {
-    await orderApi.handleCancelRequest(id, {
+    await adminOrderService.processCancelRequest(id, {
       status: "approved",
       adminResponse: "Chấp nhận cho phép hủy đơn",
     });
@@ -52,7 +52,7 @@ const CancelRequestList: React.FC = () => {
   };
 
   const handleReject = async (id: string) => {
-    await orderApi.handleCancelRequest(id, {
+    await adminOrderService.processCancelRequest(id, {
       status: "rejected",
       adminResponse: "Từ chối yêu cầu hủy đơn",
     });
@@ -144,7 +144,7 @@ const CancelRequestList: React.FC = () => {
                       : req.status}
                   </td>
                   <td className="py-2 px-4 border-b text-sm">
-                    {req.adminResponse}
+                    {req.adminResponse || "-"}
                   </td>
                   <td className="py-2 px-4 border-b text-center text-sm">
                     <div className="flex flex-col gap-2 min-w-[120px]">
