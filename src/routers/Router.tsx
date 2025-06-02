@@ -152,6 +152,7 @@ const AppRouter = () => {
           }
         />
         <Route path="payment/status" element={<PaymentStatusPage />} />
+        <Route path="payment/result" element={<PaymentStatusPage />} />
       </Route>
     </Routes>
   );

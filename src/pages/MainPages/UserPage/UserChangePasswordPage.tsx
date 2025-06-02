@@ -102,7 +102,7 @@ const UserChangePasswordPage: React.FC = () => {
           setTimeout(() => {
             // Redirect to login
             window.location.href = "/login";
-          }, 2000);
+          }, 5000); // 4 giây để người dùng đọc thông báo
         }, 1000);
       }
     } catch (error: any) {
