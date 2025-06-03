@@ -23,7 +23,7 @@ const AdminNavbar = () => {
   // Xử lý logout
   const handleLogout = () => {
     logout();
-    toast.success("Đăng xuất thành công");
+    // toast.success("Đăng xuất thành công");
     navigate("/login");
   };
 
