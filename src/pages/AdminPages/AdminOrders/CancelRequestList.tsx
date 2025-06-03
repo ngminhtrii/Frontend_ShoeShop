@@ -35,7 +35,8 @@ const CancelRequestList: React.FC = () => {
     setLoading(true);
     try {
       const res = await adminOrderService.getCancelRequests();
-      setRequests(res.data.data.cancelRequests || []);
+      // Sửa dòng này:
+      setRequests(res.data.cancelRequests || []);
     } catch {
       setRequests([]);
     } finally {
