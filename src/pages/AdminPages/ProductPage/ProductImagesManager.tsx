@@ -58,23 +58,39 @@ const ProductImagesManager = ({ productId, images, reloadImages }: any) => {
   };
 
   return (
-    <div>
-      <input
-        type="file"
-        accept="image/*"
-        name="images"
-        multiple
-        onChange={(e) => setSelectedFiles(e.target.files)}
-      />
-      <button onClick={handleUpload}>Tải ảnh lên</button>
-      <div className="flex gap-2 mt-2 flex-wrap">
+    <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-xl text-black">
+      <h3 className="text-lg font-bold mb-4">Quản Lý Ảnh Sản Phẩm</h3>
+      <div className="mb-4 flex flex-col md:flex-row gap-2 items-center">
+        <input
+          type="file"
+          accept="image/*"
+          name="images"
+          multiple
+          onChange={(e) => setSelectedFiles(e.target.files)}
+          className="block border border-gray-300 rounded px-2 py-1"
+        />
+        <button
+          onClick={handleUpload}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+        >
+          Tải ảnh lên
+        </button>
+      </div>
+      <div className="flex gap-3 mt-2 flex-wrap">
         {localImages.map((img: any, idx: number) => (
-          <div key={img._id} className="relative flex flex-col items-center">
-            <img src={img.url} alt="" className="h-20 border rounded" />
-            <div className="flex gap-1 mt-1">
+          <div
+            key={img._id}
+            className="relative flex flex-col items-center bg-gray-50 rounded-lg p-2 shadow border"
+          >
+            <img
+              src={img.url}
+              alt=""
+              className="h-24 w-24 object-cover border rounded mb-2"
+            />
+            <div className="flex gap-1 mb-1">
               <button
                 disabled={idx === 0}
-                className="px-1 py-0.5 bg-gray-200 rounded text-xs"
+                className="px-2 py-1 bg-gray-200 rounded text-xs"
                 onClick={() => moveImage(idx, idx - 1)}
                 title="Lên"
               >
@@ -82,25 +98,35 @@ const ProductImagesManager = ({ productId, images, reloadImages }: any) => {
               </button>
               <button
                 disabled={idx === localImages.length - 1}
-                className="px-1 py-0.5 bg-gray-200 rounded text-xs"
+                className="px-2 py-1 bg-gray-200 rounded text-xs"
                 onClick={() => moveImage(idx, idx + 1)}
                 title="Xuống"
               >
                 ↓
               </button>
             </div>
-            <button onClick={() => handleRemove(img._id)}>Xóa</button>
+            <button
+              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs mb-1"
+              onClick={() => handleRemove(img._id)}
+            >
+              Xóa
+            </button>
             {!img.isMain && (
-              <button onClick={() => handleSetMain(img._id)}>
+              <button
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs"
+                onClick={() => handleSetMain(img._id)}
+              >
                 Đặt làm chính
               </button>
             )}
-            {img.isMain && <span className="text-green-600">Main</span>}
+            {img.isMain && (
+              <span className="text-green-600 font-semibold text-xs">Main</span>
+            )}
           </div>
         ))}
       </div>
       <button
-        className="mt-2 px-3 py-1 bg-blue-500 text-white rounded"
+        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
         onClick={handleReorder}
         disabled={localImages.length < 2}
       >
