@@ -177,6 +177,11 @@ export interface VnpayCallbackParams {
   vnp_TxnRef: string;
   vnp_SecureHashType: string;
   vnp_SecureHash: string;
+  // Các tham số bổ sung từ backend redirect
+  orderId?: string;
+  orderCode?: string;
+  message?: string;
+  status?: string;
 }
 
 export interface CancelRequest {
@@ -248,8 +253,12 @@ export interface VnpayResponse {
   data: {
     url?: string;
     orderId?: string;
+    orderCode?: string;
     transactionId?: string;
     status?: string;
+    amount?: number;
+    paymentStatus?: string;
+    orderStatus?: string;
     [key: string]: unknown;
   };
 }

@@ -118,25 +118,35 @@ axiosInstanceAuth.interceptors.response.use(
     if (error.response) {
       const errorMessage = error.response.data?.message || "Có lỗi xảy ra";
 
-      // Không hiển thị toast cho lỗi đăng nhập - để component tự xử lý
-      // Hầu hết các route khác sẽ hiện toast
-      if (
+      // Tối ưu: Không hiển thị toast cho một số endpoint cụ thể để tránh delay
+      const skipToastUrls = [
+        "/api/v1/auth/login",
+        "/api/v1/auth/logout",
+        "/api/v1/orders/vnpay/callback",
+        "/api/v1/orders/vnpay/ipn",
+      ];
+
+      const shouldSkipToast =
         error.config &&
         error.config.url &&
-        !error.config.url.includes("/api/v1/auth/login") &&
-        !error.config.url.includes("/api/v1/auth/logout")
-      ) {
-        if (error.response.status !== 401) {
-          // Chỉ hiển thị toast cho lỗi không phải 401 (đã xử lý ở trên)
+        skipToastUrls.some((url) => error.config.url.includes(url));
+
+      if (!shouldSkipToast && error.response.status !== 401) {
+        // Sử dụng setTimeout để tránh block UI
+        setTimeout(() => {
           toast.error(errorMessage);
-        }
+        }, 0);
       }
     } else if (error.request) {
       // Request gửi đi nhưng không nhận được response
-      toast.error("Không thể kết nối với máy chủ");
+      setTimeout(() => {
+        toast.error("Không thể kết nối với máy chủ");
+      }, 0);
     } else {
       // Lỗi khi thiết lập request
-      toast.error("Có lỗi xảy ra khi gửi yêu cầu");
+      setTimeout(() => {
+        toast.error("Có lỗi xảy ra khi gửi yêu cầu");
+      }, 0);
     }
 
     return Promise.reject(error);
