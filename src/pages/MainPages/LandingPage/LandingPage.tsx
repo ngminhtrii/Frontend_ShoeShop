@@ -431,7 +431,7 @@ const LandingPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <SectionTitle
             title="Sản phẩm nổi bật"
-            linkTo="/products?sort=featured"
+            linkTo="/products?sort=rating"
             linkText="Xem tất cả"
           />
           <ProductGrid
