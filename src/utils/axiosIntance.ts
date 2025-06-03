@@ -98,7 +98,6 @@ axiosInstanceAuth.interceptors.response.use(
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
 
-          toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
           window.location.href = "/login";
           return Promise.reject(error);
         }
@@ -108,7 +107,8 @@ axiosInstanceAuth.interceptors.response.use(
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
 
-        toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        // Không hiển thị toast ở đây để tránh conflict với logout toast
+        // toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         window.location.href = "/login";
         return Promise.reject(refreshError);
       }
@@ -123,7 +123,8 @@ axiosInstanceAuth.interceptors.response.use(
       if (
         error.config &&
         error.config.url &&
-        !error.config.url.includes("/api/v1/auth/login")
+        !error.config.url.includes("/api/v1/auth/login") &&
+        !error.config.url.includes("/api/v1/auth/logout")
       ) {
         if (error.response.status !== 401) {
           // Chỉ hiển thị toast cho lỗi không phải 401 (đã xử lý ở trên)

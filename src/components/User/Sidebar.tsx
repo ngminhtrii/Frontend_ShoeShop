@@ -12,6 +12,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { authenticateApi } from "../../services/AuthenticationService";
 import Cookie from "js-cookie";
+import toast from "react-hot-toast";
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const Sidebar: React.FC = () => {
       await authenticateApi.logout();
       localStorage.removeItem("accessToken");
       Cookie.remove("token");
+      toast.success("Đăng xuất thành công");
       navigate("/");
     } catch {
       navigate("/");

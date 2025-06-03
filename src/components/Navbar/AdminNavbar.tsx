@@ -1,5 +1,4 @@
 import default_avatar from "../../assets/default_avatar.png";
-import { IoIosArrowDown } from "react-icons/io";
 // @ts-ignore
 import "@fontsource/lobster";
 import { useState, useEffect } from "react";
@@ -7,7 +6,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AiOutlineMenu, AiOutlineLogout, AiOutlineHome } from "react-icons/ai";
 import { RiCloseLine } from "react-icons/ri";
 import { useAuth } from "../../hooks/useAuth";
-import { toast } from "react-hot-toast";
 
 const AdminNavbar = () => {
   const navigate = useNavigate();
@@ -21,10 +19,20 @@ const AdminNavbar = () => {
   }, [location.pathname]);
 
   // Xử lý logout
-  const handleLogout = () => {
-    logout();
-    // toast.success("Đăng xuất thành công");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Delay trước khi navigate để toast kịp hiển thị
+      setTimeout(() => {
+        navigate("/login");
+      }, 500);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Fallback navigation nếu có lỗi
+      setTimeout(() => {
+        navigate("/login");
+      }, 500);
+    }
   };
 
   // Tiêu đề trang dựa vào URL

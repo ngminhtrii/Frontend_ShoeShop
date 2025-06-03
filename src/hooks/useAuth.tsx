@@ -206,11 +206,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   // Đăng xuất
-  const logout = useCallback(() => {
-    removeTokens();
-    setIsAuthenticated(false);
-    setUser(null);
-    toast.success("Đã đăng xuất thành công");
+  const logout = useCallback(async () => {
+    try {
+      // Hiển thị toast trước khi thực hiện logout
+      toast.success("Đăng xuất thành công!", {
+        duration: 2000,
+      });
+
+      // Delay ngắn để toast kịp hiển thị
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Thực hiện logout
+      await authService.logout();
+
+      // Clear state
+      setUser(null);
+      setIsAuthenticated(false);
+
+      // Clear localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Vẫn clear state local nếu API lỗi
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+
+      toast.success("Đăng xuất thành công!", {
+        duration: 2000,
+      });
+    }
   }, []);
 
   // Đăng ký
