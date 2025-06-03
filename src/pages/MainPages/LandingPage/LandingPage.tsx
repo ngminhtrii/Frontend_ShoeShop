@@ -34,10 +34,13 @@ const LandingPage: React.FC = () => {
 
   const bannerImages = [
     {
-      url: "https://firebasestorage.googleapis.com/v0/b/refreshing-well-408704.appspot.com/o/mwc.jpg?alt=media&token=30fda9a4-0580-4f0a-8804-90bc66c92946",
+      url: "https://res.cloudinary.com/dlettieyo/image/upload/v1748965117/uppnq8h5ztvk6spbdvl7.jpg",
     },
     {
-      url: "https://firebasestorage.googleapis.com/v0/b/refreshing-well-408704.appspot.com/o/mwc%20(1).jpg?alt=media&token=8d01ac71-bcf4-4a81-8a03-2e41dba04e6e",
+      url: "https://res.cloudinary.com/dlettieyo/image/upload/v1748965117/ipfybtskefkig8miiy2n.jpg",
+    },
+    {
+      url: "https://res.cloudinary.com/dlettieyo/image/upload/v1748966099/axvwuull9ul3ohkwslm6.jpg",
     },
   ];
 
