@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { variantApi } from "../../../services/VariantService";
+import { Variant } from "../../../types/product";
 import VariantForm from "./VariantForm";
 import VariantImagesManager from "./VariantImagesManager";
 
 const VariantPage: React.FC = () => {
-  const [variants, setVariants] = useState<any[]>([]);
-  const [deletedVariants, setDeletedVariants] = useState<any[]>([]);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [deletedVariants, setDeletedVariants] = useState<Variant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingVariant, setEditingVariant] = useState<any | null>(null);
+  const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
 
   // State cho quản lý ảnh
   const [showImageManager, setShowImageManager] = useState<string | null>(null);
-  const [variantImages, setVariantImages] = useState<any[]>([]);
+  const [variantImages, setVariantImages] = useState<Variant["imagesvariant"]>(
+    []
+  );
 
   // Lấy danh sách biến thể
   const fetchVariants = async () => {
@@ -63,9 +66,8 @@ const VariantPage: React.FC = () => {
     }
     fetchVariants();
   };
-
   // Bắt đầu cập nhật
-  const handleEdit = (variant: any) => {
+  const handleEdit = (variant: Variant) => {
     setEditingVariant(variant);
     setIsFormOpen(true);
   };
@@ -90,9 +92,9 @@ const VariantPage: React.FC = () => {
   };
 
   // Mở modal quản lý ảnh
-  const handleOpenImageManager = async (variant: any) => {
+  const handleOpenImageManager = async (variant: Variant) => {
     setShowImageManager(variant._id);
-    // Lấy lại ảnh biến thể từ API (nếu cần)
+    // Lấy lại ảnh biến thể từ API
     if (variant.imagesvariant) {
       setVariantImages(variant.imagesvariant);
     } else {
@@ -176,62 +178,88 @@ const VariantPage: React.FC = () => {
             <tbody>
               {(showDeleted ? deletedVariants : variants).map((v) => (
                 <tr key={v._id} className="hover:bg-gray-50 border-t">
-                  <td className="px-4 py-3 text-sm">{v._id}</td>
+                  <td className="px-4 py-3 text-sm">{v._id}</td>{" "}
                   <td className="px-4 py-3 text-sm">
-                    {v.product?.name || v.product}
-                  </td>
-                  <td className="px-4 py-3 text-sm flex items-center gap-2">
-                    {v.color?.name || v.color}
-                    {v.color?.colors?.length > 0 && (
-                      <span className="flex gap-1">
-                        {v.color.colors.length === 1 ? (
-                          <span
-                            className="inline-block w-6 h-6 rounded-full border"
-                            style={{
-                              background:
-                                v.color.colors[0] ||
-                                "#e5e7eb" /* fallback gray-200 */,
-                            }}
-                            title={v.color.colors[0]}
-                          ></span>
-                        ) : v.color.colors.length === 2 ? (
-                          <span
-                            className="inline-block w-6 h-6 rounded-full border"
-                            style={{
-                              background: `linear-gradient(90deg, ${v.color.colors[0]} 50%, ${v.color.colors[1]} 50%)`,
-                            }}
-                            title={v.color.colors.join(" / ")}
-                          ></span>
-                        ) : (
-                          <span
-                            className="inline-block w-6 h-6 rounded-full border"
-                            style={{
-                              background: `linear-gradient(90deg, ${v.color.colors
-                                .map((c: string, i: number, arr: string[]) => {
-                                  const percent = Math.round(
-                                    (100 / arr.length) * (i + 1)
-                                  );
-                                  return `${c} ${percent}%`;
-                                })
-                                .join(", ")})`,
-                            }}
-                            title={v.color.colors.join(" / ")}
-                          ></span>
+                    {typeof v.product === "object" ? v.product.name : v.product}
+                  </td>{" "}
+                  <td className="px-4 py-3 text-sm">
+                    <div className="flex items-center justify-between min-h-[40px]">
+                      <div className="flex-1 pr-3">
+                        <span className="font-medium text-gray-700 leading-none">
+                          {typeof v.color === "object" ? v.color.name : v.color}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-center w-8 h-8 flex-shrink-0">
+                        {typeof v.color === "object" && (
+                          <>
+                            {v.color.type === "solid" && v.color.code ? (
+                              // Hiển thị màu solid
+                              <div
+                                className="w-7 h-7 rounded-full border-2 border-gray-300 shadow-sm transition-transform hover:scale-110"
+                                style={{
+                                  background: v.color.code || "#e5e7eb",
+                                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)",
+                                }}
+                                title={`Solid: ${v.color.code}`}
+                              ></div>
+                            ) : v.color.type === "half" &&
+                              v.color.colors?.length === 2 ? (
+                              // Hiển thị màu half (2 màu)
+                              <div
+                                className="w-7 h-7 rounded-full border-2 border-gray-300 shadow-sm transition-transform hover:scale-110 relative overflow-hidden"
+                                title={`Half: ${v.color.colors.join(" / ")}`}
+                              >
+                                <div
+                                  className="absolute inset-0 rounded-full"
+                                  style={{
+                                    background: `linear-gradient(90deg, ${v.color.colors[0]} 50%, ${v.color.colors[1]} 50%)`,
+                                  }}
+                                ></div>
+                              </div>
+                            ) : v.color.colors && v.color.colors.length > 0 ? (
+                              // Fallback cho màu có nhiều hơn 2 màu
+                              <div
+                                className="w-7 h-7 rounded-full border-2 border-gray-300 shadow-sm transition-transform hover:scale-110 relative overflow-hidden"
+                                title={v.color.colors.join(" / ")}
+                              >
+                                <div
+                                  className="absolute inset-0 rounded-full"
+                                  style={{
+                                    background: `linear-gradient(90deg, ${v.color.colors
+                                      .map(
+                                        (
+                                          c: string,
+                                          i: number,
+                                          arr: string[]
+                                        ) => {
+                                          const percent = Math.round(
+                                            (100 / arr.length) * (i + 1)
+                                          );
+                                          return `${c} ${percent}%`;
+                                        }
+                                      )
+                                      .join(", ")})`,
+                                  }}
+                                ></div>
+                              </div>
+                            ) : null}
+                          </>
                         )}
-                      </span>
-                    )}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-sm">
                     {v.price?.toLocaleString()}đ
                   </td>
-                  <td className="px-4 py-3 text-sm">{v.gender}</td>
+                  <td className="px-4 py-3 text-sm">{v.gender}</td>{" "}
                   <td className="px-4 py-3 text-sm">
-                    {v.sizes?.map((s: any) => (
+                    {v.sizes?.map((s) => (
                       <span
-                        key={s.size?._id || s.size}
+                        key={typeof s.size === "object" ? s.size._id : s.size}
                         className="inline-block mr-2"
                       >
-                        {s.size?.value || s.size}: {s.quantity}
+                        {typeof s.size === "object" ? s.size.value : s.size}:{" "}
+                        {s.quantity}
                       </span>
                     ))}
                   </td>

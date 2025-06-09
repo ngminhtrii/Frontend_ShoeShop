@@ -7,7 +7,7 @@ export interface ProductAttributes {
     _id: string;
     name: string;
     code: string;
-    type: "solid" | "gradient";
+    type: "solid" | "half";
     colors?: string[];
   }>;
   sizes?: Array<{
@@ -45,5 +45,43 @@ export interface ProductImages {
   [key: string]: Array<{
     url: string;
     alt?: string;
+  }>;
+}
+
+export interface Variant {
+  _id: string;
+  product:
+    | {
+        _id: string;
+        name: string;
+      }
+    | string;
+  color:
+    | {
+        _id: string;
+        name: string;
+        code?: string;
+        type: "solid" | "half";
+        colors?: string[];
+      }
+    | string;
+  price: number;
+  gender: string;
+  sizes: Array<{
+    size:
+      | {
+          _id: string;
+          value: string | number;
+        }
+      | string;
+    quantity: number;
+  }>;
+  isActive: boolean;
+  deletedAt?: Date | null;
+  imagesvariant?: Array<{
+    _id: string;
+    url: string;
+    isMain: boolean;
+    displayOrder: number;
   }>;
 }
